@@ -64,7 +64,7 @@ function SpinnerIcon({ className }: { className?: string }) {
   );
 }
 
-type UsageState = { plan: string; wordsUsed: number; wordLimit: number };
+type UsageState = { plan: string; wordsUsed: number; wordLimit: number | null };
 
 const PLAN_LABELS: Record<string, string> = {
   free: "Free",
@@ -179,7 +179,7 @@ export default function HumanizerPage() {
   };
 
   // ── Usage bar helpers ──────────────────────────────────────────
-  const usagePct = usage && usage.wordLimit !== Infinity && usage.wordLimit > 0
+  const usagePct = usage && usage.wordLimit != null && usage.wordLimit !== Infinity && usage.wordLimit > 0
     ? Math.min(100, (usage.wordsUsed / usage.wordLimit) * 100)
     : null;
   const usageBarColor = usagePct !== null
@@ -375,11 +375,11 @@ export default function HumanizerPage() {
             <div className="w-full max-w-[420px] flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className={`text-[11px] font-semibold ${tok.textFaint}`}>
-                  {usage.wordLimit === Infinity
+                  {usage.wordLimit == null || usage.wordLimit === Infinity
                     ? `${usage.wordsUsed.toLocaleString()} words used · ${PLAN_LABELS[usage.plan] ?? usage.plan} Plan`
-                    : `${usage.wordsUsed.toLocaleString()} / ${usage.wordLimit.toLocaleString()} words · ${PLAN_LABELS[usage.plan] ?? usage.plan} Plan`}
+                    : `${usage.wordsUsed.toLocaleString()} / ${usage.wordLimit?.toLocaleString() ?? "∞"} words · ${PLAN_LABELS[usage.plan] ?? usage.plan} Plan`}
                 </span>
-                {usage.wordLimit !== Infinity && (
+                {usage.wordLimit != null && usage.wordLimit !== Infinity && (
                   <button
                     onClick={() => setShowUpgradeModal(true)}
                     className="text-[10.5px] font-bold text-orange-400 hover:text-orange-300 transition-colors duration-150"
@@ -388,7 +388,7 @@ export default function HumanizerPage() {
                   </button>
                 )}
               </div>
-              {usage.wordLimit !== Infinity && usagePct !== null && (
+              {usage.wordLimit != null && usage.wordLimit !== Infinity && usagePct !== null && (
                 <div className={`h-[3px] w-full rounded-full overflow-hidden ${tok.progressBg}`}>
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${usageBarColor}`}
