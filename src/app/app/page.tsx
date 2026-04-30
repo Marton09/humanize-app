@@ -97,6 +97,16 @@ export default function HumanizerPage() {
       .catch(() => {});
   }, []);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showUpgradeModal) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [showUpgradeModal]);
+
   const handleHumanize = useCallback(async () => {
     if (!input.trim() || loading) return;
     setLoading(true);
@@ -138,7 +148,6 @@ export default function HumanizerPage() {
   const outputWords = wc(output);
   const canSubmit   = !loading && input.trim().length > 0;
 
-  // ── Theme tokens ──────────────────────────────────────────────
   const d = dark;
   const tok = {
     page:       d ? "bg-[#0a0a0a] text-white"           : "bg-[#fafafa] text-gray-900",
@@ -180,7 +189,6 @@ export default function HumanizerPage() {
     e.currentTarget.style.backgroundColor = "";
   };
 
-  // ── Usage bar helpers ──────────────────────────────────────────
   const usagePct = usage && usage.wordLimit != null && usage.wordLimit !== Infinity && usage.wordLimit > 0
     ? Math.min(100, (usage.wordsUsed / usage.wordLimit) * 100)
     : null;
@@ -194,10 +202,10 @@ export default function HumanizerPage() {
       {/* ── Upgrade modal ── */}
       {showUpgradeModal && (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${tok.modalOverlay}`}
+          className={`fixed inset-0 z-50 flex items-center justify-center px-4 overflow-y-auto ${tok.modalOverlay}`}
           onClick={(e) => { if (e.target === e.currentTarget) setShowUpgradeModal(false); }}
         >
-          <div className={`relative w-full max-w-[420px] rounded-2xl border p-8 ${tok.modalBg}`}
+          <div className={`relative w-full max-w-[420px] rounded-2xl border p-8 my-8 ${tok.modalBg}`}
             style={d ? { boxShadow: "0 0 0 1px rgba(249,115,22,0.15), 0 0 80px rgba(249,115,22,0.12)" } : {}}>
 
             {/* Close */}
@@ -263,7 +271,7 @@ export default function HumanizerPage() {
             {/* Divider */}
             <div className="flex items-center gap-3 my-4">
               <div className={`h-px flex-1 ${tok.divider}`} />
-              <span className={`text-[11px] font-semibold ${tok.textFaint}`}>or go full Pro</span>
+              <span className={`text-[11px] font-semibold ${tok.textFaint}`}>or upgrade</span>
               <div className={`h-px flex-1 ${tok.divider}`} />
             </div>
 
@@ -285,6 +293,26 @@ export default function HumanizerPage() {
                 Start Pro — $12.99/mo
               </Link>
             </div>
+
+            {/* Unlimited option */}
+            <div className={`rounded-xl p-5 border mt-3 ${d ? "bg-white/[0.03] border-white/[0.07]" : "bg-gray-50 border-gray-200"}`}>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.13em] text-orange-400">Unlimited</p>
+                <span className={`text-[11px] font-semibold ${tok.textMuted}`}>Power users</span>
+              </div>
+              <div className="flex items-end gap-1.5 mb-1">
+                <span className={`text-[1.65rem] font-black leading-none ${d ? "text-white" : "text-gray-900"}`}>$29.99</span>
+                <span className={`text-sm font-semibold mb-0.5 ${tok.textMuted}`}>/month</span>
+              </div>
+              <p className={`text-[12px] mb-4 ${tok.textFaint}`}>Unlimited words · all modes · priority</p>
+              <Link
+                href="/upgrade?plan=unlimited"
+                className={`w-full flex items-center justify-center py-2.5 rounded-xl text-sm font-bold border-2 transition-all duration-200 ${d ? "border-white/[0.12] text-white/55 hover:border-orange-500/40 hover:text-white" : "border-gray-200 text-gray-600 hover:border-orange-300 hover:text-gray-900"}`}
+              >
+                Go Unlimited — $29.99/mo
+              </Link>
+            </div>
+
           </div>
         </div>
       )}
@@ -300,8 +328,6 @@ export default function HumanizerPage() {
       {/* ── Header ── */}
       <header className={`relative z-20 border-b ${tok.hdrBorder} transition-colors duration-300`}>
         <div className="max-w-[1380px] mx-auto px-8 py-[14px] flex items-center justify-between">
-
-          {/* Logo — back to landing page */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative flex items-center justify-center">
               <div className="absolute w-8 h-8 bg-orange-500 rounded-xl blur-[12px] opacity-55 group-hover:opacity-75 transition-opacity duration-200" />
@@ -316,13 +342,11 @@ export default function HumanizerPage() {
             </span>
           </Link>
 
-          {/* Right badges + toggle */}
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-[5px] text-[10.5px] font-bold uppercase tracking-widest text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
               GPT-4o
             </span>
-
             <button
               onClick={() => setDark(!dark)}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${tok.toggleBtn}`}
@@ -337,13 +361,10 @@ export default function HumanizerPage() {
       {/* ── Main content ── */}
       <main className="relative z-10 flex-1 flex flex-col max-w-[1380px] mx-auto w-full px-8 py-10 gap-8">
 
-        {/* Hero */}
         <div className="text-center space-y-3 pt-1">
           <h1 className="text-[2.75rem] font-bold tracking-[-0.02em] leading-[1.12]">
             <span className={d ? "text-white/95" : "text-gray-900"}>Make AI Text Sound </span>
-            <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-              Human
-            </span>
+            <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Human</span>
           </h1>
           <p className={`text-[15px] max-w-[400px] mx-auto leading-[1.65] ${tok.textMuted}`}>
             Paste AI-generated content and get a natural, undetectable rewrite in seconds.
@@ -419,24 +440,17 @@ export default function HumanizerPage() {
               onClick={() => setShowStyleInput(!showStyleInput)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[12.5px] font-semibold border transition-all duration-200 ${
                 showStyleInput || writingSample.trim()
-                  ? d
-                    ? "bg-orange-500/10 border-orange-500/30 text-orange-400"
-                    : "bg-orange-50 border-orange-300 text-orange-600"
-                  : d
-                    ? "bg-white/[0.04] border-white/[0.08] text-white/45 hover:border-white/[0.15] hover:text-white/70"
-                    : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  ? d ? "bg-orange-500/10 border-orange-500/30 text-orange-400" : "bg-orange-50 border-orange-300 text-orange-600"
+                  : d ? "bg-white/[0.04] border-white/[0.08] text-white/45 hover:border-white/[0.15] hover:text-white/70"
+                      : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
               }`}
             >
               <span>✨</span>
               Add Your Writing Style
-              <svg
-                width="10" height="10" viewBox="0 0 10 10" fill="none"
-                className={`transition-transform duration-200 ${showStyleInput ? "rotate-180" : ""}`}
-              >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={`transition-transform duration-200 ${showStyleInput ? "rotate-180" : ""}`}>
                 <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
-
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-widest rounded-full border ${
               d ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-600"
             }`}>
@@ -464,7 +478,6 @@ export default function HumanizerPage() {
                   </span>
                 )}
               </div>
-
               <div className="relative">
                 <textarea
                   value={writingSample}
@@ -499,21 +512,15 @@ export default function HumanizerPage() {
 
         {/* ── Editor panels ── */}
         <div className="grid grid-cols-2 gap-5">
-
           {/* ── Input ── */}
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center justify-between px-0.5">
               <div className="flex items-center gap-[7px]">
                 <div className={`w-[5px] h-[5px] rounded-full ${d ? "bg-white/25" : "bg-gray-300"}`} />
-                <span className={`text-[11px] font-bold uppercase tracking-[0.12em] ${tok.textMuted}`}>
-                  Original Text
-                </span>
+                <span className={`text-[11px] font-bold uppercase tracking-[0.12em] ${tok.textMuted}`}>Original Text</span>
               </div>
-              <span className={`text-[11px] tabular-nums ${tok.textFaint}`}>
-                {inputWords} {inputWords === 1 ? "word" : "words"}
-              </span>
+              <span className={`text-[11px] tabular-nums ${tok.textFaint}`}>{inputWords} {inputWords === 1 ? "word" : "words"}</span>
             </div>
-
             <div className="relative group">
               <textarea
                 value={input}
@@ -543,37 +550,23 @@ export default function HumanizerPage() {
             <div className="flex items-center justify-between px-0.5">
               <div className="flex items-center gap-[7px]">
                 <div className={`w-[5px] h-[5px] rounded-full transition-colors duration-500 ${output ? "bg-orange-400" : d ? "bg-white/25" : "bg-gray-300"}`} />
-                <span className={`text-[11px] font-bold uppercase tracking-[0.12em] ${tok.textMuted}`}>
-                  Humanized Output
-                </span>
+                <span className={`text-[11px] font-bold uppercase tracking-[0.12em] ${tok.textMuted}`}>Humanized Output</span>
               </div>
-
               {output && (
                 <div className="flex items-center gap-3">
-                  <span className={`text-[11px] tabular-nums ${tok.textFaint}`}>
-                    {outputWords} {outputWords === 1 ? "word" : "words"}
-                  </span>
+                  <span className={`text-[11px] tabular-nums ${tok.textFaint}`}>{outputWords} {outputWords === 1 ? "word" : "words"}</span>
                   <button
                     onClick={handleCopy}
-                    className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-[5px] rounded-lg border transition-all duration-200 ${
-                      copied
-                        ? "bg-orange-500/15 text-orange-400 border-orange-500/30"
-                        : tok.copyBtn
-                    }`}
+                    className={`flex items-center gap-1.5 text-[11px] font-semibold px-3 py-[5px] rounded-lg border transition-all duration-200 ${copied ? "bg-orange-500/15 text-orange-400 border-orange-500/30" : tok.copyBtn}`}
                   >
                     {copied ? <><CheckIcon /> Copied!</> : <><CopyIcon /> Copy</>}
                   </button>
                 </div>
               )}
             </div>
-
             <div
               className={`relative h-[440px] rounded-2xl border overflow-auto transition-all duration-300 ${
-                loading
-                  ? tok.loadingBg
-                  : output
-                    ? `${tok.surface} ${tok.border}`
-                    : `${tok.surfaceAlt} ${tok.borderFaint}`
+                loading ? tok.loadingBg : output ? `${tok.surface} ${tok.border}` : `${tok.surfaceAlt} ${tok.borderFaint}`
               }`}
               style={loading ? { boxShadow: "0 0 40px rgba(249,115,22,0.08)" } : {}}
             >
@@ -602,9 +595,7 @@ export default function HumanizerPage() {
                   </div>
                 </div>
               ) : output ? (
-                <p className={`p-6 text-[14.5px] whitespace-pre-wrap leading-[1.8] ${tok.textMain}`}>
-                  {output}
-                </p>
+                <p className={`p-6 text-[14.5px] whitespace-pre-wrap leading-[1.8] ${tok.textMain}`}>{output}</p>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
                   <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center ${tok.emptyIcon}`}>
@@ -612,9 +603,7 @@ export default function HumanizerPage() {
                       <path d="M9 3.5v11M3.5 9h11" stroke={d ? "rgba(255,255,255,0.3)" : "#d1d5db"} strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                   </div>
-                  <p className={`text-[13px] leading-relaxed max-w-[200px] ${tok.textDim}`}>
-                    Your humanized output will appear here
-                  </p>
+                  <p className={`text-[13px] leading-relaxed max-w-[200px] ${tok.textDim}`}>Your humanized output will appear here</p>
                 </div>
               )}
             </div>
@@ -628,19 +617,14 @@ export default function HumanizerPage() {
             disabled={!canSubmit}
             className="group relative flex items-center gap-2.5 px-12 py-[15px] rounded-2xl text-[15px] font-bold transition-all duration-200 disabled:cursor-not-allowed"
           >
-            <span
-              className={`absolute inset-0 rounded-2xl transition-all duration-200 ${
-                canSubmit
-                  ? "bg-gradient-to-r from-orange-500 to-amber-500 shadow-2xl shadow-orange-900/40 group-hover:shadow-orange-900/55 group-hover:from-orange-400 group-hover:to-amber-400 group-hover:scale-[1.02]"
-                  : tok.disabledBtn
-              }`}
-            />
+            <span className={`absolute inset-0 rounded-2xl transition-all duration-200 ${
+              canSubmit
+                ? "bg-gradient-to-r from-orange-500 to-amber-500 shadow-2xl shadow-orange-900/40 group-hover:shadow-orange-900/55 group-hover:from-orange-400 group-hover:to-amber-400 group-hover:scale-[1.02]"
+                : tok.disabledBtn
+            }`} />
             <span className={`relative flex items-center gap-2.5 tracking-[-0.01em] ${canSubmit ? "text-white" : ""}`}>
               {loading ? (
-                <>
-                  <SpinnerIcon className="w-[18px] h-[18px] animate-spin" />
-                  Humanizing…
-                </>
+                <><SpinnerIcon className="w-[18px] h-[18px] animate-spin" />Humanizing…</>
               ) : (
                 <>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -651,11 +635,8 @@ export default function HumanizerPage() {
               )}
             </span>
           </button>
-
           <p className={`text-[12px] ${tok.textDim}`}>
-            {inputWords > 0
-              ? `${inputWords.toLocaleString()} words · ⌘ Enter to run`
-              : "Paste text above to get started"}
+            {inputWords > 0 ? `${inputWords.toLocaleString()} words · ⌘ Enter to run` : "Paste text above to get started"}
           </p>
         </div>
       </main>
