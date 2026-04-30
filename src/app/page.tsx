@@ -384,7 +384,7 @@ export default function LandingPage() {
 
         {/* ═══════════════ PRICING ═══════════════ */}
         <section id="pricing" className="px-6 pb-28">
-          <div className="max-w-[1000px] mx-auto">
+          <div className="max-w-[1240px] mx-auto">
 
             <div className="text-center mb-12">
               <span className="text-xs font-bold uppercase tracking-[0.13em] text-orange-400 mb-3 block">Pricing</span>
@@ -423,22 +423,22 @@ export default function LandingPage() {
             </div>
 
             {/* ── Cards ── */}
-            <div className="grid grid-cols-3 gap-5 items-start">
+            <div className="grid grid-cols-4 gap-4 items-start">
 
               {/* Free */}
-              <div className={`rounded-2xl border p-8 flex flex-col transition-all duration-200 ${t.card} ${t.cardHover}`}>
+              <div className={`rounded-2xl border p-7 flex flex-col transition-all duration-200 ${t.card} ${t.cardHover}`}>
                 <p className={`text-[11px] font-black uppercase tracking-[0.14em] mb-4 ${t.muted}`}>Free</p>
 
                 <div className="mb-6">
                   <div className="flex items-end gap-1.5 mb-1">
-                    <span className={`text-[2.75rem] font-black tracking-tight leading-none ${d ? "text-white" : "text-gray-900"}`}>$0</span>
+                    <span className={`text-[2.5rem] font-black tracking-tight leading-none ${d ? "text-white" : "text-gray-900"}`}>$0</span>
                     <span className={`text-sm font-semibold mb-[5px] ${t.muted}`}>/month</span>
                   </div>
-                  <p className={`text-[13px] ${t.muted}`}>500 words / month</p>
+                  <p className={`text-[13px] ${t.muted}`}>250 words / month</p>
                 </div>
 
                 <div className="flex flex-col gap-3 mb-8 flex-1">
-                  {["500 words per month", "Standard mode only", "Community support"].map((feat) => (
+                  {["250 words per month", "Standard mode only", "Community support"].map((feat) => (
                     <div key={feat} className="flex items-start gap-2.5">
                       <svg className="w-[14px] h-[14px] mt-[2px] shrink-0 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"/>
@@ -460,9 +460,48 @@ export default function LandingPage() {
                 </Link>
               </div>
 
+              {/* Trial */}
+              <div className={`rounded-2xl border p-7 flex flex-col relative transition-all duration-200 ${t.card} ${t.cardHover}`}>
+                {/* 7 Day Trial badge */}
+                <div className="absolute -top-[13px] inset-x-0 flex justify-center">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[9.5px] font-black uppercase tracking-widest bg-orange-500/15 text-orange-400 border border-orange-500/30 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                    7 Day Trial
+                  </span>
+                </div>
+
+                <p className={`text-[11px] font-black uppercase tracking-[0.14em] mb-4 text-orange-400`}>Trial</p>
+
+                <div className="mb-6">
+                  <div className="flex items-end gap-1.5 mb-1">
+                    <span className={`text-[2.5rem] font-black tracking-tight leading-none ${d ? "text-white" : "text-gray-900"}`}>$1.99</span>
+                  </div>
+                  <p className={`text-[12px] font-semibold text-orange-400/80 mb-0.5`}>for 7 days</p>
+                  <p className={`text-[12px] ${t.muted}`}>then cancel anytime</p>
+                </div>
+
+                <div className="flex flex-col gap-3 mb-8 flex-1">
+                  {["500 words to use", "All 3 writing modes", "Cancel anytime"].map((feat) => (
+                    <div key={feat} className="flex items-start gap-2.5">
+                      <svg className="w-[14px] h-[14px] mt-[2px] shrink-0 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <span className={`text-[13.5px] ${d ? "text-white/60" : "text-gray-500"}`}>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <Link
+                  href="/signup?plan=trial"
+                  className="w-full flex items-center justify-center py-3 rounded-xl text-sm font-bold bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 hover:border-orange-500/50 transition-all duration-200"
+                >
+                  Start Trial — $1.99
+                </Link>
+              </div>
+
               {/* Pro — highlighted */}
               <div
-                className={`rounded-2xl border p-8 flex flex-col relative ${
+                className={`rounded-2xl border p-7 flex flex-col relative ${
                   d ? "bg-[#140e03] border-orange-500/40" : "bg-white border-orange-400/55"
                 }`}
                 style={{ boxShadow: d
@@ -484,7 +523,7 @@ export default function LandingPage() {
                     {annual && (
                       <span className={`text-sm font-semibold line-through self-end mb-[5px] mr-0.5 ${t.muted}`}>$12.99</span>
                     )}
-                    <span className={`text-[2.75rem] font-black tracking-tight leading-none ${d ? "text-white" : "text-gray-900"}`}>
+                    <span className={`text-[2.5rem] font-black tracking-tight leading-none ${d ? "text-white" : "text-gray-900"}`}>
                       ${annual ? "10.99" : "12.99"}
                     </span>
                     <span className={`text-sm font-semibold mb-[5px] ${t.muted}`}>/month</span>
@@ -512,7 +551,7 @@ export default function LandingPage() {
               </div>
 
               {/* Unlimited */}
-              <div className={`rounded-2xl border p-8 flex flex-col transition-all duration-200 ${t.card} ${t.cardHover}`}>
+              <div className={`rounded-2xl border p-7 flex flex-col transition-all duration-200 ${t.card} ${t.cardHover}`}>
                 <p className={`text-[11px] font-black uppercase tracking-[0.14em] mb-4 ${t.muted}`}>Unlimited</p>
 
                 <div className="mb-6">
@@ -520,7 +559,7 @@ export default function LandingPage() {
                     {annual && (
                       <span className={`text-sm font-semibold line-through self-end mb-[5px] mr-0.5 ${t.muted}`}>$29.99</span>
                     )}
-                    <span className={`text-[2.75rem] font-black tracking-tight leading-none ${d ? "text-white" : "text-gray-900"}`}>
+                    <span className={`text-[2.5rem] font-black tracking-tight leading-none ${d ? "text-white" : "text-gray-900"}`}>
                       ${annual ? "24.99" : "29.99"}
                     </span>
                     <span className={`text-sm font-semibold mb-[5px] ${t.muted}`}>/month</span>

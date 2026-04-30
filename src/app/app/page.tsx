@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Sora } from "next/font/google";
 import Link from "next/link";
 
@@ -64,6 +64,15 @@ function SpinnerIcon({ className }: { className?: string }) {
   );
 }
 
+type UsageState = { plan: string; wordsUsed: number; wordLimit: number };
+
+const PLAN_LABELS: Record<string, string> = {
+  free: "Free",
+  trial: "Trial",
+  pro: "Pro",
+  unlimited: "Unlimited",
+};
+
 export default function HumanizerPage() {
   const [input, setInput]     = useState("");
   const [output, setOutput]   = useState("");
@@ -72,6 +81,19 @@ export default function HumanizerPage() {
   const [error, setError]     = useState("");
   const [copied, setCopied]   = useState(false);
   const [dark, setDark]       = useState(true);
+  const [usage, setUsage]     = useState<UsageState | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/usage")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.plan) {
+          setUsage({ plan: data.plan, wordsUsed: data.wordsUsed, wordLimit: data.wordLimit });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleHumanize = useCallback(async () => {
     if (!input.trim() || loading) return;
@@ -85,8 +107,17 @@ export default function HumanizerPage() {
         body:    JSON.stringify({ text: input, mode }),
       });
       const data = await res.json();
+      if (data.limitHit) {
+        setShowUpgradeModal(true);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Something went wrong.");
       setOutput(data.result);
+      if (data.wordsUsed !== undefined) {
+        setUsage((prev) =>
+          prev ? { ...prev, wordsUsed: data.wordsUsed, wordLimit: data.wordLimit, plan: data.plan } : prev
+        );
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -130,6 +161,10 @@ export default function HumanizerPage() {
     emptyIcon:  d ? "bg-white/[0.03] border-white/[0.05]" : "bg-gray-100 border-gray-200",
     loadingBg:  d ? "bg-[#120f0a] border-orange-500/25"   : "bg-orange-50 border-orange-200/60",
     disabledBtn:d ? "bg-white/[0.05] text-white/20"       : "bg-gray-100 text-gray-300",
+    progressBg: d ? "bg-white/[0.07]"                     : "bg-gray-200",
+    modalBg:    d ? "bg-[#141414] border-white/[0.08]"    : "bg-white border-gray-200",
+    modalOverlay: "bg-black/65 backdrop-blur-sm",
+    divider:    d ? "bg-white/[0.08]"                     : "bg-gray-200",
   };
 
   const onTextareaFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
@@ -143,8 +178,114 @@ export default function HumanizerPage() {
     e.currentTarget.style.backgroundColor = "";
   };
 
+  // ── Usage bar helpers ──────────────────────────────────────────
+  const usagePct = usage && usage.wordLimit !== Infinity && usage.wordLimit > 0
+    ? Math.min(100, (usage.wordsUsed / usage.wordLimit) * 100)
+    : null;
+  const usageBarColor = usagePct !== null
+    ? usagePct >= 90 ? "bg-red-500" : usagePct >= 70 ? "bg-amber-500" : "bg-orange-500"
+    : "bg-orange-500";
+
   return (
     <div className={`${sora.variable} font-[family-name:var(--font-sora)] min-h-screen flex flex-col transition-colors duration-300 ${tok.page}`}>
+
+      {/* ── Upgrade modal ── */}
+      {showUpgradeModal && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center px-4 ${tok.modalOverlay}`}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowUpgradeModal(false); }}
+        >
+          <div className={`relative w-full max-w-[420px] rounded-2xl border p-8 ${tok.modalBg}`}
+            style={d ? { boxShadow: "0 0 0 1px rgba(249,115,22,0.15), 0 0 80px rgba(249,115,22,0.12)" } : {}}>
+
+            {/* Close */}
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className={`absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150 ${d ? "text-white/30 hover:text-white/70 hover:bg-white/[0.07]" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              </svg>
+            </button>
+
+            {/* Header */}
+            <div className="mb-6">
+              <div className="w-11 h-11 rounded-xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center mb-4">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <h2 className={`text-xl font-black tracking-tight mb-1 ${d ? "text-white" : "text-gray-900"}`}>
+                You&apos;ve hit your word limit
+              </h2>
+              <p className={`text-[13.5px] leading-relaxed ${tok.textMuted}`}>
+                Upgrade to keep humanizing — no interruptions.
+              </p>
+            </div>
+
+            {/* Trial offer card */}
+            <div
+              className="rounded-xl p-5 mb-3"
+              style={{ background: d ? "linear-gradient(135deg,#1c0e00,#130a00)" : "linear-gradient(135deg,#fff7ed,#fffbf5)", border: "1px solid rgba(249,115,22,0.3)" }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/15 border border-orange-500/25 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                  7 Day Trial
+                </span>
+                <span className={`text-[11px] font-semibold ${tok.textMuted}`}>Best for trying out</span>
+              </div>
+              <div className="flex items-end gap-1.5 mb-1">
+                <span className={`text-[2rem] font-black leading-none ${d ? "text-white" : "text-gray-900"}`}>$1.99</span>
+                <span className={`text-sm font-semibold mb-0.5 ${tok.textMuted}`}>for 7 days</span>
+              </div>
+              <p className={`text-[12px] mb-4 ${tok.textFaint}`}>then cancel anytime</p>
+              <ul className="flex flex-col gap-2 mb-5">
+                {["500 words to use", "All 3 writing modes", "Cancel anytime"].map((f) => (
+                  <li key={f} className="flex items-center gap-2">
+                    <svg className="w-3.5 h-3.5 text-orange-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span className={`text-[12.5px] ${d ? "text-white/65" : "text-gray-600"}`}>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/upgrade?plan=trial"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-900/30 hover:from-orange-400 hover:to-amber-400 hover:shadow-orange-900/50 transition-all duration-200"
+              >
+                Start 7-Day Trial — $1.99
+              </Link>
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 my-4">
+              <div className={`h-px flex-1 ${tok.divider}`} />
+              <span className={`text-[11px] font-semibold ${tok.textFaint}`}>or go full Pro</span>
+              <div className={`h-px flex-1 ${tok.divider}`} />
+            </div>
+
+            {/* Pro option */}
+            <div className={`rounded-xl p-5 border ${d ? "bg-white/[0.03] border-white/[0.07]" : "bg-gray-50 border-gray-200"}`}>
+              <div className="flex items-center justify-between mb-3">
+                <p className={`text-[11px] font-black uppercase tracking-[0.13em] text-orange-400`}>Pro Plan</p>
+                <span className={`text-[11px] font-semibold ${tok.textMuted}`}>Best value</span>
+              </div>
+              <div className="flex items-end gap-1.5 mb-1">
+                <span className={`text-[1.65rem] font-black leading-none ${d ? "text-white" : "text-gray-900"}`}>$12.99</span>
+                <span className={`text-sm font-semibold mb-0.5 ${tok.textMuted}`}>/month</span>
+              </div>
+              <p className={`text-[12px] mb-4 ${tok.textFaint}`}>50,000 words per month · all modes</p>
+              <Link
+                href="/upgrade?plan=pro"
+                className={`w-full flex items-center justify-center py-2.5 rounded-xl text-sm font-bold border-2 transition-all duration-200 ${d ? "border-white/[0.12] text-white/55 hover:border-orange-500/40 hover:text-white" : "border-gray-200 text-gray-600 hover:border-orange-300 hover:text-gray-900"}`}
+              >
+                Start Pro — $12.99/mo
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Ambient glow (dark only) ── */}
       {d && (
@@ -228,6 +369,35 @@ export default function HumanizerPage() {
           <p className={`text-[13px] min-h-[18px] transition-colors duration-200 ${tok.textFaint}`}>
             {MODES.find((m) => m.id === mode)?.desc}
           </p>
+
+          {/* ── Usage tracker ── */}
+          {usage && (
+            <div className="w-full max-w-[420px] flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className={`text-[11px] font-semibold ${tok.textFaint}`}>
+                  {usage.wordLimit === Infinity
+                    ? `${usage.wordsUsed.toLocaleString()} words used · ${PLAN_LABELS[usage.plan] ?? usage.plan} Plan`
+                    : `${usage.wordsUsed.toLocaleString()} / ${usage.wordLimit.toLocaleString()} words · ${PLAN_LABELS[usage.plan] ?? usage.plan} Plan`}
+                </span>
+                {usage.wordLimit !== Infinity && (
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="text-[10.5px] font-bold text-orange-400 hover:text-orange-300 transition-colors duration-150"
+                  >
+                    Upgrade ↗
+                  </button>
+                )}
+              </div>
+              {usage.wordLimit !== Infinity && usagePct !== null && (
+                <div className={`h-[3px] w-full rounded-full overflow-hidden ${tok.progressBg}`}>
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${usageBarColor}`}
+                    style={{ width: `${usagePct}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Editor panels ── */}
