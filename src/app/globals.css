@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+/* Textarea glow on focus — applied via JS inline style for smooth animation */
+.textarea-glow:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.4);
+  background-color: #111318;
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 0 40px rgba(139, 92, 246, 0.06);
+}
+
+/* Animated hero blobs */
+@keyframes blob-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-28px) scale(1.04); }
+}
+@keyframes blob-float-b {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(20px) scale(0.96); }
+}
+.animate-blob   { animation: blob-float   9s ease-in-out infinite; }
+.animate-blob-b { animation: blob-float-b 11s ease-in-out infinite; }
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Subtle scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
