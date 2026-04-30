@@ -9,17 +9,6 @@ import { createClient } from "@/lib/supabase/client";
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora", display: "swap" });
 const supabase = createClient();
 
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
-      <path d="M47.532 24.552c0-1.636-.145-3.2-.415-4.695H24.48v9.138h12.985c-.56 2.978-2.248 5.502-4.787 7.197v5.985h7.753c4.534-4.18 7.101-10.337 7.101-17.625z" fill="#4285F4"/>
-      <path d="M24.48 48c6.516 0 11.98-2.16 15.974-5.823l-7.753-5.985c-2.16 1.44-4.922 2.29-8.22 2.29-6.32 0-11.673-4.27-13.585-10.006H2.88v6.18C6.858 42.612 15.076 48 24.48 48z" fill="#34A853"/>
-      <path d="M10.895 28.476A14.388 14.388 0 0 1 9.96 24c0-1.567.27-3.09.935-4.476v-6.18H2.88A23.99 23.99 0 0 0 .48 24c0 3.877.926 7.545 2.4 10.656l8.015-6.18z" fill="#FBBC05"/>
-      <path d="M24.48 9.518c3.562 0 6.758 1.224 9.277 3.63l6.953-6.953C36.456 2.386 30.995 0 24.48 0 15.076 0 6.858 5.388 2.88 13.344l8.015 6.18C12.807 13.787 18.16 9.518 24.48 9.518z" fill="#EA4335"/>
-    </svg>
-  );
-}
-
 function SpinnerIcon() {
   return (
     <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -42,13 +31,12 @@ function blurGlow(e: React.FocusEvent<HTMLInputElement>) {
 }
 
 export default function SignupPage() {
-  const [email, setEmail]           = useState("");
-  const [password, setPassword]     = useState("");
-  const [confirm, setConfirm]       = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError]           = useState("");
-  const [success, setSuccess]       = useState(false);
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm]   = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [success, setSuccess]   = useState(false);
   const router = useRouter();
 
   async function handleSignup(e: React.FormEvent) {
@@ -72,24 +60,13 @@ export default function SignupPage() {
       return;
     }
 
-    // If email confirmation is disabled in Supabase, session is immediately available
     if (data.session) {
       router.push("/app");
       router.refresh();
     } else {
-      // Email confirmation required
       setSuccess(true);
       setLoading(false);
     }
-  }
-
-  async function handleGoogle() {
-    setGoogleLoading(true);
-    setError("");
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
   }
 
   return (
@@ -121,7 +98,6 @@ export default function SignupPage() {
         <div className="bg-[#111111] border border-white/[0.07] rounded-3xl p-8">
 
           {success ? (
-            /* ── Email confirmation screen ── */
             <div className="text-center py-4">
               <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mx-auto mb-5">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -142,24 +118,6 @@ export default function SignupPage() {
               <h1 className="text-[1.6rem] font-black tracking-tight text-white mb-1">Create account</h1>
               <p className="text-sm text-white/35 mb-7">Start humanizing your AI text for free.</p>
 
-              {/* Google button */}
-              <button
-                onClick={handleGoogle}
-                disabled={googleLoading || loading}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white/[0.05] border border-white/[0.08] text-sm font-semibold text-white/75 hover:bg-white/[0.09] hover:text-white hover:border-white/[0.14] transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed mb-5"
-              >
-                {googleLoading ? <SpinnerIcon /> : <GoogleIcon />}
-                Continue with Google
-              </button>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3 mb-5">
-                <div className="flex-1 h-px bg-white/[0.07]" />
-                <span className="text-xs text-white/20 font-medium">or</span>
-                <div className="flex-1 h-px bg-white/[0.07]" />
-              </div>
-
-              {/* Form */}
               <form onSubmit={handleSignup} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">Email</label>
@@ -203,7 +161,6 @@ export default function SignupPage() {
                   />
                 </div>
 
-                {/* Error */}
                 {error && (
                   <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-red-500/[0.07] border border-red-500/20">
                     <svg className="w-4 h-4 text-red-400 mt-px shrink-0" viewBox="0 0 16 16" fill="none">
@@ -216,15 +173,15 @@ export default function SignupPage() {
 
                 <button
                   type="submit"
-                  disabled={loading || googleLoading}
+                  disabled={loading}
                   className="relative flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:cursor-not-allowed mt-1"
                 >
                   <span className={`absolute inset-0 rounded-xl transition-all duration-200 ${
-                    loading || googleLoading
+                    loading
                       ? "bg-white/[0.05]"
                       : "bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-900/35 hover:shadow-orange-900/55 hover:from-orange-400 hover:to-amber-400"
                   }`} />
-                  <span className={`relative flex items-center gap-2 ${loading || googleLoading ? "text-white/25" : "text-white"}`}>
+                  <span className={`relative flex items-center gap-2 ${loading ? "text-white/25" : "text-white"}`}>
                     {loading ? <><SpinnerIcon /> Creating account…</> : "Create Account"}
                   </span>
                 </button>
@@ -240,7 +197,6 @@ export default function SignupPage() {
           )}
         </div>
 
-        {/* Footer link */}
         {!success && (
           <p className="text-center text-sm text-white/30 mt-6">
             Already have an account?{" "}
