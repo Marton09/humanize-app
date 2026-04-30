@@ -97,7 +97,7 @@ const FEATURES = [
   { Icon: ShieldIcon,  title: "Bypasses AI Detectors",        desc: "Clears GPTZero, Turnitin, Originality.AI, and more — every time, without fail." },
   { Icon: SlidersIcon, title: "Multiple Writing Modes",        desc: "Standard, Aggressive, and Academic — tailored to match your exact tone and context." },
   { Icon: ZapIcon,     title: "Lightning Fast",                desc: "Results in seconds, powered by GPT-4o for unmatched quality and speed." },
-  { Icon: SparkleIcon, title: "Works with All AI Tools",       desc: "ChatGPT, Claude, Gemini, Jasper — whatever you write with, we make it human." },
+  { Icon: SparkleIcon, title: "Matches Your Writing Style",     desc: "Paste a sample of your writing and the AI mimics your personal style — making it virtually undetectable." },
 ];
 
 const STEPS = [

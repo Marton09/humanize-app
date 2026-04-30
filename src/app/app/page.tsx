@@ -81,8 +81,10 @@ export default function HumanizerPage() {
   const [error, setError]     = useState("");
   const [copied, setCopied]   = useState(false);
   const [dark, setDark]       = useState(true);
-  const [usage, setUsage]     = useState<UsageState | null>(null);
+  const [usage, setUsage]           = useState<UsageState | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [writingSample, setWritingSample] = useState("");
+  const [showStyleInput, setShowStyleInput] = useState(false);
 
   useEffect(() => {
     fetch("/api/usage")
@@ -104,7 +106,7 @@ export default function HumanizerPage() {
       const res  = await fetch("/api/humanize", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ text: input, mode }),
+        body:    JSON.stringify({ text: input, mode, writingSample: writingSample.trim() || undefined }),
       });
       const data = await res.json();
       if (data.limitHit) {
@@ -366,9 +368,19 @@ export default function HumanizerPage() {
               </button>
             ))}
           </div>
-          <p className={`text-[13px] min-h-[18px] transition-colors duration-200 ${tok.textFaint}`}>
-            {MODES.find((m) => m.id === mode)?.desc}
-          </p>
+          <div className="flex items-center gap-3 min-h-[18px]">
+            <p className={`text-[13px] transition-colors duration-200 ${tok.textFaint}`}>
+              {MODES.find((m) => m.id === mode)?.desc}
+            </p>
+            {writingSample.trim() && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-400">
+                <svg width="8" height="7" viewBox="0 0 8 7" fill="none">
+                  <path d="M1 3.5L3 5.5L7 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Style Matched
+              </span>
+            )}
+          </div>
 
           {/* ── Usage tracker ── */}
           {usage && (
@@ -396,6 +408,91 @@ export default function HumanizerPage() {
                   />
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Writing style panel ── */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowStyleInput(!showStyleInput)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[12.5px] font-semibold border transition-all duration-200 ${
+                showStyleInput || writingSample.trim()
+                  ? d
+                    ? "bg-orange-500/10 border-orange-500/30 text-orange-400"
+                    : "bg-orange-50 border-orange-300 text-orange-600"
+                  : d
+                    ? "bg-white/[0.04] border-white/[0.08] text-white/45 hover:border-white/[0.15] hover:text-white/70"
+                    : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700"
+              }`}
+            >
+              <span>✨</span>
+              Add Your Writing Style
+              <svg
+                width="10" height="10" viewBox="0 0 10 10" fill="none"
+                className={`transition-transform duration-200 ${showStyleInput ? "rotate-180" : ""}`}
+              >
+                <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[9.5px] font-black uppercase tracking-widest rounded-full border ${
+              d ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-600"
+            }`}>
+              <span className="w-1 h-1 rounded-full bg-emerald-400" />
+              Beats AI Detectors
+            </span>
+          </div>
+
+          {showStyleInput && (
+            <div className="w-full relative group/style">
+              <div className="flex items-center justify-between px-0.5 mb-2">
+                <div className="flex items-center gap-[7px]">
+                  <span className="text-orange-400">✦</span>
+                  <span className={`text-[11px] font-bold uppercase tracking-[0.12em] ${tok.textMuted}`}>
+                    Your Writing Style
+                    <span className={`ml-2 text-[10px] font-semibold normal-case tracking-normal ${tok.textFaint}`}>(optional)</span>
+                  </span>
+                </div>
+                {writingSample.trim() && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400">
+                    <svg width="9" height="8" viewBox="0 0 9 8" fill="none">
+                      <path d="M1 4L3.5 6.5L8 1" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Style Matched ✓
+                  </span>
+                )}
+              </div>
+
+              <div className="relative">
+                <textarea
+                  value={writingSample}
+                  onChange={(e) => setWritingSample(e.target.value)}
+                  placeholder="Paste a sample of your own writing here — an old essay, email, or anything you wrote. The tool will match your personal style to make the output sound like you."
+                  className={`w-full h-[140px] rounded-2xl px-6 py-5 text-[13.5px] resize-none leading-[1.75] outline-none transition-all duration-150 ${tok.surface} ${tok.textMain} ${tok.placeholder}`}
+                  style={{ border: "1px solid rgba(249,115,22,0.35)", boxShadow: "0 0 0 0 transparent" }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(249,115,22,0.55)";
+                    e.currentTarget.style.boxShadow = "0 0 0 1px rgba(249,115,22,0.2), 0 0 30px rgba(249,115,22,0.06)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(249,115,22,0.35)";
+                    e.currentTarget.style.boxShadow = "0 0 0 0 transparent";
+                  }}
+                />
+                {writingSample && (
+                  <button
+                    onClick={() => setWritingSample("")}
+                    className={`absolute top-3.5 right-3.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-150 opacity-0 group-hover/style:opacity-100 ${tok.clearBtn}`}
+                    title="Clear"
+                  >
+                    <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+                      <path d="M1 1L8 8M8 1L1 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
