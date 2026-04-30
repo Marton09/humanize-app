@@ -97,7 +97,6 @@ export default function HumanizerPage() {
       .catch(() => {});
   }, []);
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (showUpgradeModal) {
       document.body.style.overflow = "hidden";
@@ -208,7 +207,6 @@ export default function HumanizerPage() {
           <div className={`relative w-full max-w-[420px] rounded-2xl border p-8 my-8 ${tok.modalBg}`}
             style={d ? { boxShadow: "0 0 0 1px rgba(249,115,22,0.15), 0 0 80px rgba(249,115,22,0.12)" } : {}}>
 
-            {/* Close */}
             <button
               onClick={() => setShowUpgradeModal(false)}
               className={`absolute top-4 right-4 w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150 ${d ? "text-white/30 hover:text-white/70 hover:bg-white/[0.07]" : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"}`}
@@ -218,7 +216,6 @@ export default function HumanizerPage() {
               </svg>
             </button>
 
-            {/* Header */}
             <div className="mb-6">
               <div className="w-11 h-11 rounded-xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center mb-4">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -233,7 +230,6 @@ export default function HumanizerPage() {
               </p>
             </div>
 
-            {/* Trial offer card */}
             <div
               className="rounded-xl p-5 mb-3"
               style={{ background: d ? "linear-gradient(135deg,#1c0e00,#130a00)" : "linear-gradient(135deg,#fff7ed,#fffbf5)", border: "1px solid rgba(249,115,22,0.3)" }}
@@ -268,14 +264,12 @@ export default function HumanizerPage() {
               </Link>
             </div>
 
-            {/* Divider */}
             <div className="flex items-center gap-3 my-4">
               <div className={`h-px flex-1 ${tok.divider}`} />
               <span className={`text-[11px] font-semibold ${tok.textFaint}`}>or upgrade</span>
               <div className={`h-px flex-1 ${tok.divider}`} />
             </div>
 
-            {/* Pro option */}
             <div className={`rounded-xl p-5 border ${d ? "bg-white/[0.03] border-white/[0.07]" : "bg-gray-50 border-gray-200"}`}>
               <div className="flex items-center justify-between mb-3">
                 <p className={`text-[11px] font-black uppercase tracking-[0.13em] text-orange-400`}>Pro Plan</p>
@@ -294,7 +288,6 @@ export default function HumanizerPage() {
               </Link>
             </div>
 
-            {/* Unlimited option */}
             <div className={`rounded-xl p-5 border mt-3 ${d ? "bg-white/[0.03] border-white/[0.07]" : "bg-gray-50 border-gray-200"}`}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] font-black uppercase tracking-[0.13em] text-orange-400">Unlimited</p>
@@ -312,12 +305,10 @@ export default function HumanizerPage() {
                 Go Unlimited — $29.99/mo
               </Link>
             </div>
-
           </div>
         </div>
       )}
 
-      {/* ── Ambient glow (dark only) ── */}
       {d && (
         <div aria-hidden className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[900px] h-[480px] rounded-full bg-orange-500/[0.07] blur-[140px]" />
@@ -347,6 +338,17 @@ export default function HumanizerPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
               GPT-4o
             </span>
+            {/* Account icon */}
+            <Link
+              href="/account"
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${tok.toggleBtn}`}
+              title="My Account"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </Link>
             <button
               onClick={() => setDark(!dark)}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${tok.toggleBtn}`}
@@ -512,7 +514,6 @@ export default function HumanizerPage() {
 
         {/* ── Editor panels ── */}
         <div className="grid grid-cols-2 gap-5">
-          {/* ── Input ── */}
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center justify-between px-0.5">
               <div className="flex items-center gap-[7px]">
@@ -545,7 +546,6 @@ export default function HumanizerPage() {
             </div>
           </div>
 
-          {/* ── Output ── */}
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center justify-between px-0.5">
               <div className="flex items-center gap-[7px]">
