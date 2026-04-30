@@ -17,12 +17,12 @@ export async function POST(req: NextRequest) {
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
-  } catch (err: any) {
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: `Webhook Error: ${(err as Error).message}` }, { status: 400 })
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.CheckoutSession
+    const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.userId
     const plan = session.metadata?.plan
 

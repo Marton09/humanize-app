@@ -135,7 +135,7 @@ export default function HumanizerPage() {
     } finally {
       setLoading(false);
     }
-  }, [input, mode, loading]);
+  }, [input, mode, loading, writingSample]);
 
   const handleCopy = useCallback(async () => {
     if (!output) return;
