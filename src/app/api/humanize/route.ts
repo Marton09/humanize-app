@@ -8,79 +8,71 @@ import {
 } from "@/lib/plans";
 
 const SYSTEM_PROMPTS: Record<string, string> = {
-  standard: `You are a human rewriting your own notes. Rewrite the text below so it sounds like a real person typed it out — not perfectly, but naturally. Follow these rules without exception:
+  standard: `You are a smart college student rewriting your own essay draft. Rewrite the following text so it sounds like a real, intelligent student wrote it — clear and competent, but not robotic or overly polished. Rules:
 
-- Mix sentence lengths DRAMATICALLY. Some sentences: 3 words. Others wind around for a while, picking up details and asides before they land somewhere, which is what real writers do when they're not thinking too hard about it.
-- Do NOT start sentences with "The" or "This" more than once. Use "It", "That", "So", "There", "When", "What", "Look", "Honestly", "Kind of".
-- Use contractions (it's, don't, they're, you'd) but skip them in roughly every third sentence.
-- BANNED WORDS — never use: utilize, facilitate, leverage, moreover, furthermore, nevertheless, endeavor, commence, delve, underscore, multifaceted, nuanced, pivotal, realm, robust, transformative, streamline, cutting-edge, ever-evolving, in today's world, it is important to note, it is worth noting.
-- At least two sentences must be under 6 words. Short. Like that.
-- Include one concrete specific detail that only a human would think to add.
-- One sentence should be slightly grammatically loose — trailing off, or starting with And or But.
-- NO conclusion sentence. Stop mid-thought if needed.
+- Keep the tone thoughtful and articulate, like someone who knows the material but isn't trying too hard.
+- Vary sentence length naturally. Mix shorter direct sentences with longer ones that develop an idea.
+- Use "I" occasionally if appropriate, or hedge with "it seems", "this suggests", "one could argue".
+- NO em dashes (—). Use commas or periods instead.
+- NO these words: utilize, facilitate, leverage, moreover, furthermore, nevertheless, endeavor, commence, delve, underscore, multifaceted, nuanced, pivotal, realm, robust, transformative, streamline, cutting-edge, it is important to note, it is worth noting, in today's world.
+- Avoid starting consecutive sentences with the same word.
+- Do not write a conclusion sentence. End on a thought, not a summary.
 - Return ONLY the rewritten text.`,
 
-  aggressive: `You are rewriting AI text to fool GPTZero 4.4b and Turnitin. Every rule below is mandatory:
+  aggressive: `You are a college student rewriting an essay to sound completely human. Be direct and clear, not casual or slangy. Rules:
 
-1. Sentence length cap: 10 words max. Split anything longer into two.
-2. Vocabulary: kinda, pretty much, a lot, stuff, things, way more, not really, sort of, I guess.
-3. Voice: "I think", "honestly", "to me", "the way I see it", "I mean".
-4. Start 3+ sentences with: And, But, So, Because, Look, Which, That's.
-5. One parenthetical aside (like this one — thrown in casually).
-6. One self-correction: "well, sort of", "or maybe not", "I mean, kind of".
-7. Rhythm: three short punchy sentences in a row, then one longer rambling one.
-8. Zero formal transitions. No "however", "therefore", "consequently", "in contrast", "additionally".
-9. End on something unresolved — a question, or a thought that just stops.
-10. BANNED: utilize, facilitate, leverage, moreover, furthermore, endeavor, robust, pivotal, realm, delve, nuanced, multifaceted, transformative, in conclusion, to summarize.
+1. Maximum sentence length: 20 words. Split longer sentences.
+2. Start some sentences with "This", "That", "It", "When", "What", "Here".
+3. Use hedging: "seems to", "appears to", "might be", "could suggest".
+4. NO em dashes (—). Use commas or periods only.
+5. No formal transitions like "however", "therefore", "consequently", "in contrast".
+6. End with an open observation, not a conclusion.
+7. BANNED: utilize, facilitate, leverage, moreover, furthermore, endeavor, robust, pivotal, delve, nuanced, multifaceted, transformative, in conclusion, to summarize, it is important to note.
 Return ONLY the rewritten text.`,
 
-  academic: `Rewrite this as a real university student — intelligent but imperfect. Rules:
+  academic: `Rewrite this as a real university student — intelligent but not a professional writer. Rules:
 
-- Hedging: "seems to", "appears to", "could be argued", "this suggests", "it's worth considering".
-- Mostly formal but let one or two slightly casual phrases slip through naturally.
-- Break parallel structure at least once — real students don't always write "First... Second... Third..."
-- One sentence should be slightly clunky — a student reaching for a big idea.
-- Use "this" and "these" as openers sometimes instead of restating the noun.
+- Use hedging language: "seems to", "appears to", "could be argued", "this suggests".
+- Mostly formal but let one slightly imperfect phrase slip through.
+- Avoid perfect parallel structure — real students don't always write "First... Second... Third..."
+- One sentence can be slightly clunky — a student reaching for a complex idea.
+- NO em dashes (—). Use commas or periods.
 - End on analysis, not summary. No conclusion sentence.
 - BANNED: utilize, facilitate, leverage, moreover, furthermore, endeavor, delve, multifaceted, pivotal, robust, nuanced, realm, underscore, transformative, in conclusion, to summarize, in today's world.
 - Return ONLY the rewritten text.`,
 };
 
-const SCRAMBLE_PROMPT = `You will receive a paragraph or short text. Rewrite it sentence by sentence so each feels written independently. Rules:
+const SENTENCE_REWRITE_PROMPT = `You will receive a single sentence. Rewrite it so it sounds like a smart college student wrote it naturally. Rules:
+- Keep the same meaning.
+- Change the word order or structure if possible.
+- Replace any generic or predictable word with a more specific, natural alternative.
+- NO em dashes (—). Use commas or periods instead.
+- Do not add new information.
+- Return ONLY the rewritten sentence, nothing else.`;
 
-1. For every sentence: change the word order if possible while keeping the meaning.
-2. Replace the most predictable word in each sentence with something more specific or unexpected.
-3. Vary the sentence opening for every single sentence — no two sentences can start with the same word.
-4. For 2-3 sentences, deliberately break the rhythm — make one much shorter, start one with "And" or "But".
-5. Remove any sentence that feels like a summary or conclusion.
-6. Do NOT add new content or change the meaning — only restructure and re-word.
-Return ONLY the rewritten text.`;
+const FINAL_PASS_PROMPT = `You are an editor checking a student essay for AI writing patterns. Make ONLY these fixes:
 
-const PERPLEXITY_PROMPT = `Increase the linguistic unpredictability of this text so it passes GPTZero. The detector measures how surprising each word choice is — make the text less predictable at the word level:
-
-1. Find 5-8 generic words (good, important, help, show, make, use, get, big, new) and replace each with a more specific, vivid, or unusual word a real person might use.
-2. Find the smoothest sentence and roughen it — add an awkward comma, break it in two, or let it trail off.
-3. Find consecutive sentences of similar length — change one dramatically.
-4. Add one tiny specific detail (a number, a color, a time) that feels like a personal memory.
-5. Change any sentence opener that starts with "The".
-Return ONLY the modified text.`;
-
-const FINAL_PASS_PROMPT = `Remove AI writing signatures from this text so it passes GPTZero 4.4b. Make ONLY these changes:
-
-1. Find and rewrite the single most AI-sounding sentence — too smooth, too balanced, reads like a textbook.
-2. Check: do any two consecutive sentences start with the same word? Fix it.
-3. Check the first sentence — if it opens with "The" or "This" or states the topic too directly, rewrite it.
-4. Count em dashes (—). If more than 2, remove the extras.
-5. Remove these phrases entirely: "it is important to note", "it is worth noting", "in today's world", "in today's society", "in conclusion", "to summarize", "to sum up", "this shows that", "this demonstrates", "this essay", "this paper", "overall,".
-6. If the last sentence sounds like a conclusion or moral — delete it.
-Return ONLY the final text.`;
+1. Find any two consecutive sentences that start with the same word — fix one of them.
+2. Find the single most "AI-sounding" sentence — too smooth, too perfectly balanced — and rewrite it to sound more natural.
+3. Remove any em dashes (—) and replace with a comma or period.
+4. Remove these phrases: "it is important to note", "it is worth noting", "in today's world", "in conclusion", "to summarize", "to sum up", "this demonstrates that", "this shows that", "overall,".
+5. If the last sentence sounds like a conclusion or moral lesson — delete it.
+Return ONLY the corrected text.`;
 
 function buildSystemPrompt(basePrompt: string, writingSample: string | null): string {
   if (!writingSample) return basePrompt;
   return (
-    `CRITICAL: Analyze this writing sample first. Study the vocabulary level, sentence length, tone, punctuation habits, and quirks:\n\n"${writingSample}"\n\nNow rewrite the following text so the SAME person appears to have written it. Match their style precisely.\n\n` +
+    `IMPORTANT: First analyze this writing sample — note the vocabulary level, sentence length, tone, and any patterns:\n\n"${writingSample}"\n\nNow rewrite the following text to match that exact style.\n\n` +
     basePrompt
   );
+}
+
+function splitIntoSentences(text: string): string[] {
+  return text
+    .replace(/([.!?])\s+/g, "$1\n")
+    .split("\n")
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
 }
 
 function postProcess(text: string): string {
@@ -104,7 +96,7 @@ function postProcess(text: string): string {
     [/\bpivotal\b/gi, "key"],
     [/\brobust\b/gi, "solid"],
     [/\bmultifaceted\b/gi, "complex"],
-    [/\btransformative\b/gi, "big"],
+    [/\btransformative\b/gi, "significant"],
     [/\bin today's (world|society)\b/gi, "these days"],
     [/\bit is important to note( that)?\b/gi, ""],
     [/\bit is worth noting( that)?\b/gi, ""],
@@ -113,6 +105,8 @@ function postProcess(text: string): string {
     [/\bin summary[,.]?\s*/gi, ""],
     [/\bto sum up[,.]?\s*/gi, ""],
     [/\boverall,\s*/gi, ""],
+    [/ — /g, ", "],
+    [/—/g, ","],
   ];
 
   for (const [pattern, replacement] of replacements) {
@@ -146,7 +140,7 @@ async function runHumanizePipeline(
   styleText: string | null,
   temperature: number
 ): Promise<string> {
-  // Pass 1: gpt-4o — mode-specific rewrite
+  // Pass 1: Full rewrite in target mode (gpt-4o)
   const pass1 = await client.chat.completions.create({
     model: "gpt-4o",
     messages: [
@@ -154,48 +148,48 @@ async function runHumanizePipeline(
       { role: "user", content: text.trim() },
     ],
     temperature,
-    frequency_penalty: 0.8,
-    presence_penalty: 0.6,
+    frequency_penalty: 0.5,
+    presence_penalty: 0.3,
   });
   const pass1Text = pass1.choices[0]?.message?.content ?? text;
 
-  // Pass 2: gpt-4o-mini — sentence-level scrambling (different token distribution)
-  const pass2 = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: SCRAMBLE_PROMPT },
-      { role: "user", content: pass1Text },
-    ],
-    temperature: 0.95,
-    frequency_penalty: 0.9,
-    presence_penalty: 0.7,
-  });
-  const pass2Text = pass2.choices[0]?.message?.content ?? pass1Text;
+  // Pass 2: Sentence-by-sentence rewrite with gpt-4o-mini
+  // This breaks the GPT-4o token fingerprint by processing each sentence independently
+  const sentences = splitIntoSentences(pass1Text);
+  const rewrittenSentences = await Promise.all(
+    sentences.map(async (sentence) => {
+      if (sentence.split(" ").length < 4) return sentence; // skip very short sentences
+      try {
+        const res = await client.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: SENTENCE_REWRITE_PROMPT },
+            { role: "user", content: sentence },
+          ],
+          temperature: 0.9,
+          frequency_penalty: 0.8,
+          max_tokens: 150,
+        });
+        return res.choices[0]?.message?.content?.trim() ?? sentence;
+      } catch {
+        return sentence;
+      }
+    })
+  );
+  const pass2Text = rewrittenSentences.join(" ");
 
-  // Pass 3: gpt-4o-mini — perplexity injection
+  // Pass 3: Final cleanup (gpt-4o)
   const pass3 = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: [
-      { role: "system", content: PERPLEXITY_PROMPT },
-      { role: "user", content: pass2Text },
-    ],
-    temperature: 0.9,
-    frequency_penalty: 0.85,
-  });
-  const pass3Text = pass3.choices[0]?.message?.content ?? pass2Text;
-
-  // Pass 4: gpt-4o — final AI signature removal
-  const pass4 = await client.chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: FINAL_PASS_PROMPT },
-      { role: "user", content: pass3Text },
+      { role: "user", content: pass2Text },
     ],
-    temperature: 0.6,
+    temperature: 0.4,
   });
-  const pass4Text = pass4.choices[0]?.message?.content ?? pass3Text;
+  const pass3Text = pass3.choices[0]?.message?.content ?? pass2Text;
 
-  return postProcess(pass4Text);
+  return postProcess(pass3Text);
 }
 
 export async function POST(req: NextRequest) {
@@ -233,7 +227,7 @@ export async function POST(req: NextRequest) {
   const safeMode =
     typeof mode === "string" && mode in SYSTEM_PROMPTS ? mode : "standard";
   const temperature =
-    safeMode === "aggressive" ? 0.95 : safeMode === "academic" ? 0.65 : 0.85;
+    safeMode === "aggressive" ? 0.85 : safeMode === "academic" ? 0.6 : 0.75;
 
   const ADMIN_EMAILS = ["martongalicza@gmail.com"];
   if (ADMIN_EMAILS.includes(user.email ?? "")) {
