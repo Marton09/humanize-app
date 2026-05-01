@@ -1,12 +1,4 @@
-{/* ── Disclaimer banner ── */}
-<div className="relative z-30 w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center">
-  <p className="text-[12.5px] font-semibold text-amber-400">
-    ⚠️ HumanizeIt is currently in progress — the humanizer is not working yet. We&apos;ll be back soon!
-  </p>
-</div>
-
 "use client";
-
 
 import { useState, useCallback, useEffect } from "react";
 import { Sora } from "next/font/google";
@@ -206,6 +198,13 @@ export default function HumanizerPage() {
   return (
     <div className={`${sora.variable} font-[family-name:var(--font-sora)] min-h-screen flex flex-col transition-colors duration-300 ${tok.page}`}>
 
+      {/* ── Disclaimer banner ── */}
+      <div className="relative z-30 w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center">
+        <p className="text-[12.5px] font-semibold text-amber-400">
+          ⚠️ HumanizeIt is currently in progress — the humanizer is not working yet. We&apos;ll be back soon!
+        </p>
+      </div>
+
       {/* ── Upgrade modal ── */}
       {showUpgradeModal && (
         <div
@@ -346,7 +345,6 @@ export default function HumanizerPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
               GPT-4o
             </span>
-            {/* Account icon */}
             <Link
               href="/account"
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${tok.toggleBtn}`}
