@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import {
   PLAN_WORD_LIMITS,
@@ -12,14 +13,14 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 
 - Keep the tone thoughtful and articulate, like someone who knows the material but isn't trying too hard.
 - Vary sentence length naturally. Mix shorter direct sentences with longer ones that develop an idea.
-- Use "I" occasionally if appropriate, or hedge with "it seems", "this suggests", "one could argue".
+- Use hedging occasionally: "it seems", "this suggests", "one could argue".
 - NO em dashes (—). Use commas or periods instead.
 - NO these words: utilize, facilitate, leverage, moreover, furthermore, nevertheless, endeavor, commence, delve, underscore, multifaceted, nuanced, pivotal, realm, robust, transformative, streamline, cutting-edge, it is important to note, it is worth noting, in today's world.
 - Avoid starting consecutive sentences with the same word.
 - Do not write a conclusion sentence. End on a thought, not a summary.
 - Return ONLY the rewritten text.`,
 
-  aggressive: `You are a college student rewriting an essay to sound completely human. Be direct and clear, not casual or slangy. Rules:
+  aggressive: `You are a college student rewriting an essay to sound completely human. Be direct and clear. Rules:
 
 1. Maximum sentence length: 20 words. Split longer sentences.
 2. Start some sentences with "This", "That", "It", "When", "What", "Here".
@@ -34,35 +35,34 @@ Return ONLY the rewritten text.`,
 
 - Use hedging language: "seems to", "appears to", "could be argued", "this suggests".
 - Mostly formal but let one slightly imperfect phrase slip through.
-- Avoid perfect parallel structure — real students don't always write "First... Second... Third..."
-- One sentence can be slightly clunky — a student reaching for a complex idea.
+- Avoid perfect parallel structure.
 - NO em dashes (—). Use commas or periods.
 - End on analysis, not summary. No conclusion sentence.
 - BANNED: utilize, facilitate, leverage, moreover, furthermore, endeavor, delve, multifaceted, pivotal, robust, nuanced, realm, underscore, transformative, in conclusion, to summarize, in today's world.
 - Return ONLY the rewritten text.`,
 };
 
-const SENTENCE_REWRITE_PROMPT = `You will receive a single sentence. Rewrite it so it sounds like a smart college student wrote it naturally. Rules:
-- Keep the same meaning.
-- Change the word order or structure if possible.
-- Replace any generic or predictable word with a more specific, natural alternative.
-- NO em dashes (—). Use commas or periods instead.
+const CLAUDE_SENTENCE_PROMPT = `You will receive a single sentence from a student essay. Rewrite it so it sounds like a real college student wrote it naturally. Rules:
+- Keep the exact same meaning.
+- Change the word order or phrasing.
+- Replace any generic or AI-sounding word with a more natural alternative.
+- NO em dashes (—). Use commas or periods.
 - Do not add new information.
 - Return ONLY the rewritten sentence, nothing else.`;
 
 const FINAL_PASS_PROMPT = `You are an editor checking a student essay for AI writing patterns. Make ONLY these fixes:
 
-1. Find any two consecutive sentences that start with the same word — fix one of them.
-2. Find the single most "AI-sounding" sentence — too smooth, too perfectly balanced — and rewrite it to sound more natural.
+1. Find any two consecutive sentences that start with the same word — fix one.
+2. Find the single most AI-sounding sentence — too smooth or perfectly balanced — and rewrite it naturally.
 3. Remove any em dashes (—) and replace with a comma or period.
 4. Remove these phrases: "it is important to note", "it is worth noting", "in today's world", "in conclusion", "to summarize", "to sum up", "this demonstrates that", "this shows that", "overall,".
-5. If the last sentence sounds like a conclusion or moral lesson — delete it.
+5. If the last sentence sounds like a conclusion or moral — delete it.
 Return ONLY the corrected text.`;
 
 function buildSystemPrompt(basePrompt: string, writingSample: string | null): string {
   if (!writingSample) return basePrompt;
   return (
-    `IMPORTANT: First analyze this writing sample — note the vocabulary level, sentence length, tone, and any patterns:\n\n"${writingSample}"\n\nNow rewrite the following text to match that exact style.\n\n` +
+    `IMPORTANT: First analyze this writing sample — note the vocabulary, sentence length, tone, and patterns:\n\n"${writingSample}"\n\nNow rewrite the following text to match that exact style.\n\n` +
     basePrompt
   );
 }
@@ -134,14 +134,16 @@ function countWords(text: string): number {
 }
 
 async function runHumanizePipeline(
-  client: OpenAI,
+  openai: OpenAI,
+  anthropic: Anthropic,
   text: string,
   mode: string,
   styleText: string | null,
   temperature: number
 ): Promise<string> {
-  // Pass 1: Full rewrite in target mode (gpt-4o)
-  const pass1 = await client.chat.completions.create({
+
+  // Pass 1: GPT-4o full rewrite
+  const pass1 = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: buildSystemPrompt(SYSTEM_PROMPTS[mode], styleText) },
@@ -153,24 +155,21 @@ async function runHumanizePipeline(
   });
   const pass1Text = pass1.choices[0]?.message?.content ?? text;
 
-  // Pass 2: Sentence-by-sentence rewrite with gpt-4o-mini
-  // This breaks the GPT-4o token fingerprint by processing each sentence independently
+  // Pass 2: Claude rewrites each sentence independently
+  // Different model = completely different token distributions = breaks GPT fingerprint
   const sentences = splitIntoSentences(pass1Text);
   const rewrittenSentences = await Promise.all(
-    sentences.map(async (sentence) => {
-      if (sentence.split(" ").length < 4) return sentence; // skip very short sentences
+    sentences.map(async (sentence, i) => {
+      if (sentence.split(" ").length < 4) return sentence;
       try {
-        const res = await client.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: SENTENCE_REWRITE_PROMPT },
-            { role: "user", content: sentence },
-          ],
-          temperature: 0.9,
-          frequency_penalty: 0.8,
-          max_tokens: 150,
+        const res = await anthropic.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 200,
+          system: CLAUDE_SENTENCE_PROMPT,
+          messages: [{ role: "user", content: sentence }],
         });
-        return res.choices[0]?.message?.content?.trim() ?? sentence;
+        const content = res.content[0];
+        return content.type === "text" ? content.text.trim() : sentence;
       } catch {
         return sentence;
       }
@@ -178,8 +177,8 @@ async function runHumanizePipeline(
   );
   const pass2Text = rewrittenSentences.join(" ");
 
-  // Pass 3: Final cleanup (gpt-4o)
-  const pass3 = await client.chat.completions.create({
+  // Pass 3: GPT-4o final cleanup
+  const pass3 = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
       { role: "system", content: FINAL_PASS_PROMPT },
@@ -192,12 +191,16 @@ async function runHumanizePipeline(
   return postProcess(pass3Text);
 }
 
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
 export async function POST(req: NextRequest) {
   if (!process.env.OPENAI_API_KEY) {
-    return NextResponse.json(
-      { error: "OPENAI_API_KEY is not set." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "OPENAI_API_KEY is not set." }, { status: 500 });
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
   }
 
   let body: { text?: unknown; mode?: unknown; writingSample?: unknown };
@@ -229,11 +232,13 @@ export async function POST(req: NextRequest) {
   const temperature =
     safeMode === "aggressive" ? 0.85 : safeMode === "academic" ? 0.6 : 0.75;
 
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
   const ADMIN_EMAILS = ["martongalicza@gmail.com"];
   if (ADMIN_EMAILS.includes(user.email ?? "")) {
     try {
-      const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      const result = await runHumanizePipeline(client, text as string, safeMode, styleText, temperature);
+      const result = await runHumanizePipeline(openai, anthropic, text as string, safeMode, styleText, temperature);
       return NextResponse.json({ result, wordsUsed: 0, wordLimit: Infinity, plan: "unlimited" });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unexpected error.";
@@ -285,12 +290,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const result = await runHumanizePipeline(client, text as string, safeMode, styleText, temperature);
-
+    const result = await runHumanizePipeline(openai, anthropic, text as string, safeMode, styleText, temperature);
     const newTotal = currentUsed + inputWords;
     await supabase.from("usage").update({ words_used: newTotal }).eq("user_id", user.id);
-
     return NextResponse.json({ result, wordsUsed: newTotal, wordLimit, plan });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unexpected error.";
