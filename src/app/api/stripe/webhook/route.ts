@@ -28,6 +28,22 @@ export async function POST(req: NextRequest) {
 
     if (!userId || !plan) return NextResponse.json({ received: true })
 
+    const now = new Date().toISOString()
+    const trialStartDate = plan === 'trial' ? now : null
+
+    // Update the usage table — this is what the UI reads from
+    await supabase.from('usage').upsert(
+      {
+        user_id: userId,
+        plan,
+        words_used: 0,
+        words_reset_at: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString(),
+        ...(trialStartDate ? { trial_start_date: trialStartDate } : {}),
+      },
+      { onConflict: 'user_id' }
+    )
+
+    // Also keep subscriptions table in sync
     let wordLimit = 500
     if (plan === 'pro') wordLimit = 50000
     if (plan === 'unlimited') wordLimit = 999999999
@@ -41,7 +57,7 @@ export async function POST(req: NextRequest) {
       plan,
       word_limit: wordLimit,
       expires_at: expiresAt,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     })
   }
 
