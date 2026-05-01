@@ -198,13 +198,6 @@ export default function HumanizerPage() {
   return (
     <div className={`${sora.variable} font-[family-name:var(--font-sora)] min-h-screen flex flex-col transition-colors duration-300 ${tok.page}`}>
 
-      {/* ── Disclaimer banner ── */}
-      <div className="relative z-30 w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center">
-        <p className="text-[12.5px] font-semibold text-amber-400">
-          ⚠️ HumanizeIt is currently in progress — the humanizer is not working yet. We&apos;ll be back soon!
-        </p>
-      </div>
-
       {/* ── Upgrade modal ── */}
       {showUpgradeModal && (
         <div
@@ -411,7 +404,6 @@ export default function HumanizerPage() {
             )}
           </div>
 
-          {/* ── Usage tracker ── */}
           {usage && (
             <div className="w-full max-w-[420px] flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
