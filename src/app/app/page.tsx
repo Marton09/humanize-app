@@ -1,4 +1,12 @@
+{/* ── Disclaimer banner ── */}
+<div className="relative z-30 w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center">
+  <p className="text-[12.5px] font-semibold text-amber-400">
+    ⚠️ HumanizeIt is currently in progress — the humanizer is not working yet. We&apos;ll be back soon!
+  </p>
+</div>
+
 "use client";
+
 
 import { useState, useCallback, useEffect } from "react";
 import { Sora } from "next/font/google";
