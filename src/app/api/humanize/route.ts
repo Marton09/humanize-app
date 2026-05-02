@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/lib/supabase/server";
 import {
   PLAN_WORD_LIMITS,
@@ -17,18 +18,16 @@ SENTENCE STRUCTURE (most important):
 - Start sentences with different words every time. Never repeat a sentence opener.
 
 VOCABULARY:
-- Replace generic verbs (use, show, help, make, get) with more specific alternatives a student might choose.
-- Use active voice exclusively. Never write "it was found that" — write "researchers found".
+- Replace generic verbs (use, show, help, make, get) with more specific alternatives.
+- Use active voice exclusively.
 - Use hedging naturally: "this seems to", "one could argue", "it appears that".
 
 TONE:
 - Sound like a smart but imperfect student. Not a professional. Not a robot.
-- Include one slightly awkward or clunky phrase — the kind a student writes when reaching for a big idea.
+- Include one slightly awkward phrase — the kind a student writes when reaching for a big idea.
 - Do NOT summarize or conclude. End mid-analysis.
 
-BANNED:
-- Em dashes (—), never use them
-- moreover, furthermore, nevertheless, utilize, facilitate, leverage, endeavor, commence, delve, underscore, pivotal, robust, multifaceted, nuanced, transformative, in conclusion, to summarize, it is important to note, in today's world
+BANNED: Em dashes (—), moreover, furthermore, nevertheless, utilize, facilitate, leverage, endeavor, commence, delve, underscore, pivotal, robust, multifaceted, nuanced, transformative, in conclusion, to summarize, it is important to note, in today's world
 
 Return ONLY the rewritten text.`,
 
@@ -41,12 +40,11 @@ SENTENCE STRUCTURE:
 
 VOCABULARY AND VOICE:
 - Use first person occasionally: "I think", "to me", "in my view".
-- Include one self-correction or hedge: "or maybe", "well, sort of", "I mean".
+- Include one self-correction: "or maybe", "well, sort of", "I mean".
 - Use one parenthetical aside (thrown in naturally like this).
-- Start 2+ sentences with: And, But, So, Because, Which, Look.
+- Start 2+ sentences with: And, But, So, Because, Look.
 
-BANNED:
-- Em dashes (—), however, therefore, consequently, moreover, furthermore, utilize, facilitate, leverage, robust, pivotal, delve, nuanced, multifaceted, in conclusion, to summarize
+BANNED: Em dashes (—), however, therefore, consequently, moreover, furthermore, utilize, facilitate, leverage, robust, pivotal, delve, nuanced, multifaceted, in conclusion, to summarize
 
 Return ONLY the rewritten text.`,
 
@@ -54,35 +52,26 @@ Return ONLY the rewritten text.`,
 
 STRUCTURE:
 - Mix sentence lengths. One sentence per paragraph must be under 8 words. One must be over 20.
-- Break parallel structure at least once — real students don't always write "First... Second... Third..."
+- Break parallel structure at least once.
 - Use "this" and "these" as openers instead of always repeating the noun.
 
 ACADEMIC VOICE:
 - Hedging: "seems to suggest", "appears to indicate", "could be interpreted as", "one might argue".
-- Mostly formal but let one slightly casual phrase slip through naturally.
-- One sentence should be slightly clunky — a student reaching for a complex idea.
+- Mostly formal but let one slightly casual phrase slip through.
+- One sentence should be slightly clunky.
 - End on analysis, not summary.
 
-BANNED:
-- Em dashes (—), moreover, furthermore, utilize, facilitate, leverage, endeavor, delve, multifaceted, pivotal, robust, nuanced, realm, underscore, transformative, in conclusion, to summarize, in today's world
+BANNED: Em dashes (—), moreover, furthermore, utilize, facilitate, leverage, endeavor, delve, multifaceted, pivotal, robust, nuanced, realm, underscore, transformative, in conclusion, to summarize, in today's world
 
 Return ONLY the rewritten text.`,
 };
 
-const CLAUDE_REWRITE_PROMPT = `You will receive a sentence from a student essay. Your job is to rewrite it to maximize linguistic unpredictability — making it harder for AI detectors to flag. Rules:
-- Change the word order significantly while keeping the meaning.
-- Replace the most predictable word with something more specific or unexpected.
-- If the sentence is long (over 20 words), split it into two.
-- If the sentence is very short (under 6 words), leave it alone.
-- NO em dashes (—).
-- Return ONLY the rewritten sentence.`;
-
 const INTERNAL_DETECTOR_PROMPT = `You are an AI detection system. Analyze the following text and score it from 0-100 on how likely it is to be AI-generated, where 0 = definitely human and 100 = definitely AI.
 
 Look for these AI signals:
-- Uniform sentence lengths (all sentences similar word count)
+- Uniform sentence lengths
 - Formal transitional phrases (moreover, furthermore, however, therefore)
-- Perfect parallel structure in lists
+- Perfect parallel structure
 - Overly smooth, balanced phrasing
 - No personal voice or hedging
 - Conclusion/summary sentences
@@ -91,11 +80,11 @@ Look for these AI signals:
 
 Respond with ONLY a JSON object: {"score": <number>, "reasons": ["reason1", "reason2"]}`;
 
-const VARIABILITY_BOOST_PROMPT = `The following text was flagged as AI-generated. Make these specific changes to fix it:
+const VARIABILITY_BOOST_PROMPT = `The following text was flagged as AI-generated. Fix it:
 
 1. Find the 3 longest sentences and break each into two shorter ones.
-2. Find any 3 sentences in a row with similar length — make the middle one dramatically shorter (under 8 words).
-3. Replace 5 generic words with more specific, unexpected alternatives.
+2. Find any 3 sentences in a row with similar length — make the middle one under 8 words.
+3. Replace 5 generic words with more specific unexpected alternatives.
 4. Add one personal hedge ("it seems", "one might argue", "this suggests").
 5. If the last sentence sounds like a conclusion — delete it.
 6. Remove ALL em dashes (—) and replace with commas or periods.
@@ -105,7 +94,7 @@ Return ONLY the improved text.`;
 function buildSystemPrompt(basePrompt: string, writingSample: string | null): string {
   if (!writingSample) return basePrompt;
   return (
-    `CRITICAL: Analyze this writing sample first. Study the vocabulary, sentence length patterns, tone, and quirks:\n\n"${writingSample}"\n\nNow rewrite the following text so it sounds like the SAME person wrote it.\n\n` +
+    `CRITICAL: Analyze this writing sample. Study vocabulary, sentence length, tone, quirks:\n\n"${writingSample}"\n\nRewrite the following text to match that exact style.\n\n` +
     basePrompt
   );
 }
@@ -118,8 +107,7 @@ function splitIntoSentences(text: string): string[] {
     .filter(s => s.length > 0);
 }
 
-// Step 3: Algorithmic post-processing — force burstiness
-function forceburstiness(text: string): string {
+function forceBurstiness(text: string): string {
   let out = text;
 
   // Remove em dashes
@@ -128,7 +116,6 @@ function forceburstiness(text: string): string {
   // Hard-replace banned AI words
   const replacements: Array<[RegExp, string]> = [
     [/\butilized?\b/gi, "used"],
-    [/\butilization\b/gi, "use"],
     [/\bfacilitates?\b/gi, "helps"],
     [/\bfacilitated\b/gi, "helped"],
     [/\bleveraged?\b/gi, "used"],
@@ -163,7 +150,7 @@ function forceburstiness(text: string): string {
     });
   }
 
-  // Force burstiness: detect 3 similar-length sentences in a row and fix
+  // Force burstiness: split sentences that are too uniform
   const sentences = splitIntoSentences(out);
   const result: string[] = [];
 
@@ -177,13 +164,11 @@ function forceburstiness(text: string): string {
       const prevLen = prev.split(" ").length;
       const nextLen = next.split(" ").length;
 
-      // If three in a row are similar length (within 5 words of each other)
       if (
         Math.abs(currLen - prevLen) < 5 &&
         Math.abs(currLen - nextLen) < 5 &&
         currLen > 10
       ) {
-        // Split this sentence at a comma or conjunction
         const splitMatch = curr.match(/^(.{20,}?),\s(.+)$/);
         if (splitMatch) {
           result.push(splitMatch[1] + ".");
@@ -225,13 +210,14 @@ async function scoreWithInternalDetector(
 async function runHumanizePipeline(
   openai: OpenAI,
   anthropic: Anthropic,
+  gemini: GoogleGenerativeAI,
   text: string,
   mode: string,
   styleText: string | null,
   temperature: number
 ): Promise<string> {
 
-  // ── Pass 1: GPT-4o full rewrite with high entropy ────────────────
+  // ── Pass 1: GPT-4o full rewrite ──────────────────────────────────
   const pass1 = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
@@ -244,48 +230,66 @@ async function runHumanizePipeline(
   });
   const pass1Text = pass1.choices[0]?.message?.content ?? text;
 
-  // ── Pass 2: Claude rewrites each sentence independently ──────────
+  // ── Pass 2: Rotate sentences across Claude + Gemini ──────────────
+  // Odd sentences → Claude, Even sentences → Gemini
+  // This creates mixed token fingerprints that detectors can't identify
   const sentences = splitIntoSentences(pass1Text);
+  const geminiModel = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+  const claudePrompt = `Rewrite this sentence to sound more natural and human. Change the word order, replace the most predictable word with something more specific. NO em dashes. Return ONLY the rewritten sentence.`;
+  const geminiPrompt = `Rewrite this single sentence from a student essay. Make it sound more natural by changing phrasing and replacing generic words. No em dashes. Return ONLY the rewritten sentence, nothing else.`;
+
   const rewrittenSentences = await Promise.all(
-    sentences.map(async (sentence) => {
+    sentences.map(async (sentence, i) => {
       if (sentence.split(" ").length < 4) return sentence;
-      try {
-        const res = await anthropic.messages.create({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 200,
-          system: CLAUDE_REWRITE_PROMPT,
-          messages: [{ role: "user", content: sentence }],
-        });
-        const content = res.content[0];
-        return content.type === "text" ? content.text.trim() : sentence;
-      } catch {
-        return sentence;
+
+      if (i % 2 === 0) {
+        // Even sentences → Claude
+        try {
+          const res = await anthropic.messages.create({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 200,
+            system: claudePrompt,
+            messages: [{ role: "user", content: sentence }],
+          });
+          const content = res.content[0];
+          return content.type === "text" ? content.text.trim() : sentence;
+        } catch {
+          return sentence;
+        }
+      } else {
+        // Odd sentences → Gemini
+        try {
+          const result = await geminiModel.generateContent(
+            `${geminiPrompt}\n\nSentence: ${sentence}`
+          );
+          return result.response.text().trim() || sentence;
+        } catch {
+          return sentence;
+        }
       }
     })
   );
   const pass2Text = rewrittenSentences.join(" ");
 
   // ── Pass 3: Algorithmic burstiness forcing ───────────────────────
-  let current = forceburstiness(pass2Text);
+  let current = forceBurstiness(pass2Text);
 
   // ── Pass 4: Adversarial verification loop ───────────────────────
-  // Keep improving until internal detector scores < 40 or max 3 attempts
   let attempts = 0;
   const maxAttempts = 3;
 
   while (attempts < maxAttempts) {
     const { score, reasons } = await scoreWithInternalDetector(openai, current);
+    if (score < 40) break;
 
-    if (score < 40) break; // passes internal detector — done
-
-    // Still too AI — boost variability
     const boostRes = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
           content: VARIABILITY_BOOST_PROMPT + (reasons.length > 0
-            ? `\n\nSpecific issues detected:\n${reasons.map(r => `- ${r}`).join("\n")}`
+            ? `\n\nSpecific issues:\n${reasons.map(r => `- ${r}`).join("\n")}`
             : ""),
         },
         { role: "user", content: current },
@@ -295,7 +299,7 @@ async function runHumanizePipeline(
       presence_penalty: 0.7,
     });
 
-    current = forceburstiness(boostRes.choices[0]?.message?.content ?? current);
+    current = forceBurstiness(boostRes.choices[0]?.message?.content ?? current);
     attempts++;
   }
 
@@ -312,6 +316,9 @@ export async function POST(req: NextRequest) {
   }
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: "ANTHROPIC_API_KEY is not set." }, { status: 500 });
+  }
+  if (!process.env.GOOGLE_API_KEY) {
+    return NextResponse.json({ error: "GOOGLE_API_KEY is not set." }, { status: 500 });
   }
 
   let body: { text?: unknown; mode?: unknown; writingSample?: unknown };
@@ -345,11 +352,12 @@ export async function POST(req: NextRequest) {
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const gemini = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
   const ADMIN_EMAILS = ["martongalicza@gmail.com"];
   if (ADMIN_EMAILS.includes(user.email ?? "")) {
     try {
-      const result = await runHumanizePipeline(openai, anthropic, text as string, safeMode, styleText, temperature);
+      const result = await runHumanizePipeline(openai, anthropic, gemini, text as string, safeMode, styleText, temperature);
       return NextResponse.json({ result, wordsUsed: 0, wordLimit: Infinity, plan: "unlimited" });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unexpected error.";
@@ -401,7 +409,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await runHumanizePipeline(openai, anthropic, text as string, safeMode, styleText, temperature);
+    const result = await runHumanizePipeline(openai, anthropic, gemini, text as string, safeMode, styleText, temperature);
     const newTotal = currentUsed + inputWords;
     await supabase.from("usage").update({ words_used: newTotal }).eq("user_id", user.id);
     return NextResponse.json({ result, wordsUsed: newTotal, wordLimit, plan });
