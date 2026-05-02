@@ -9,60 +9,103 @@ import {
 } from "@/lib/plans";
 
 const SYSTEM_PROMPTS: Record<string, string> = {
-  standard: `You are a smart college student rewriting your own essay draft. Rewrite the following text so it sounds like a real, intelligent student wrote it — clear and competent, but not robotic or overly polished. Rules:
+  standard: `You are rewriting a text to sound like it was written by a real college student. Follow every rule strictly:
 
-- Keep the tone thoughtful and articulate, like someone who knows the material but isn't trying too hard.
-- Vary sentence length naturally. Mix shorter direct sentences with longer ones that develop an idea.
-- Use hedging occasionally: "it seems", "this suggests", "one could argue".
-- NO em dashes (—). Use commas or periods instead.
-- NO these words: utilize, facilitate, leverage, moreover, furthermore, nevertheless, endeavor, commence, delve, underscore, multifaceted, nuanced, pivotal, realm, robust, transformative, streamline, cutting-edge, it is important to note, it is worth noting, in today's world.
-- Avoid starting consecutive sentences with the same word.
-- Do not write a conclusion sentence. End on a thought, not a summary.
-- Return ONLY the rewritten text.`,
+SENTENCE STRUCTURE (most important):
+- Every paragraph MUST contain at least one sentence under 7 words AND one sentence over 25 words.
+- Never write three sentences in a row with similar lengths. Alternate between short, medium, and long.
+- Start sentences with different words every time. Never repeat a sentence opener.
 
-  aggressive: `You are a college student rewriting an essay to sound completely human. Be direct and clear. Rules:
+VOCABULARY:
+- Replace generic verbs (use, show, help, make, get) with more specific alternatives a student might choose.
+- Use active voice exclusively. Never write "it was found that" — write "researchers found".
+- Use hedging naturally: "this seems to", "one could argue", "it appears that".
 
-1. Maximum sentence length: 20 words. Split longer sentences.
-2. Start some sentences with "This", "That", "It", "When", "What", "Here".
-3. Use hedging: "seems to", "appears to", "might be", "could suggest".
-4. NO em dashes (—). Use commas or periods only.
-5. No formal transitions like "however", "therefore", "consequently", "in contrast".
-6. End with an open observation, not a conclusion.
-7. BANNED: utilize, facilitate, leverage, moreover, furthermore, endeavor, robust, pivotal, delve, nuanced, multifaceted, transformative, in conclusion, to summarize, it is important to note.
+TONE:
+- Sound like a smart but imperfect student. Not a professional. Not a robot.
+- Include one slightly awkward or clunky phrase — the kind a student writes when reaching for a big idea.
+- Do NOT summarize or conclude. End mid-analysis.
+
+BANNED:
+- Em dashes (—), never use them
+- moreover, furthermore, nevertheless, utilize, facilitate, leverage, endeavor, commence, delve, underscore, pivotal, robust, multifaceted, nuanced, transformative, in conclusion, to summarize, it is important to note, in today's world
+
 Return ONLY the rewritten text.`,
 
-  academic: `Rewrite this as a real university student — intelligent but not a professional writer. Rules:
+  aggressive: `You are rewriting text to be completely undetectable by AI detectors. Every rule is mandatory:
 
-- Use hedging language: "seems to", "appears to", "could be argued", "this suggests".
-- Mostly formal but let one slightly imperfect phrase slip through.
-- Avoid perfect parallel structure.
-- NO em dashes (—). Use commas or periods.
-- End on analysis, not summary. No conclusion sentence.
-- BANNED: utilize, facilitate, leverage, moreover, furthermore, endeavor, delve, multifaceted, pivotal, robust, nuanced, realm, underscore, transformative, in conclusion, to summarize, in today's world.
-- Return ONLY the rewritten text.`,
+SENTENCE STRUCTURE:
+- Hard cap: no sentence longer than 15 words.
+- Every paragraph needs one sentence of 3-5 words. Just like that.
+- Vary rhythm: 3 short → 1 long → 2 short → 1 medium. Never uniform.
+
+VOCABULARY AND VOICE:
+- Use first person occasionally: "I think", "to me", "in my view".
+- Include one self-correction or hedge: "or maybe", "well, sort of", "I mean".
+- Use one parenthetical aside (thrown in naturally like this).
+- Start 2+ sentences with: And, But, So, Because, Which, Look.
+
+BANNED:
+- Em dashes (—), however, therefore, consequently, moreover, furthermore, utilize, facilitate, leverage, robust, pivotal, delve, nuanced, multifaceted, in conclusion, to summarize
+
+Return ONLY the rewritten text.`,
+
+  academic: `You are rewriting text as a real university student — smart but imperfect. Rules:
+
+STRUCTURE:
+- Mix sentence lengths. One sentence per paragraph must be under 8 words. One must be over 20.
+- Break parallel structure at least once — real students don't always write "First... Second... Third..."
+- Use "this" and "these" as openers instead of always repeating the noun.
+
+ACADEMIC VOICE:
+- Hedging: "seems to suggest", "appears to indicate", "could be interpreted as", "one might argue".
+- Mostly formal but let one slightly casual phrase slip through naturally.
+- One sentence should be slightly clunky — a student reaching for a complex idea.
+- End on analysis, not summary.
+
+BANNED:
+- Em dashes (—), moreover, furthermore, utilize, facilitate, leverage, endeavor, delve, multifaceted, pivotal, robust, nuanced, realm, underscore, transformative, in conclusion, to summarize, in today's world
+
+Return ONLY the rewritten text.`,
 };
 
-const CLAUDE_SENTENCE_PROMPT = `You will receive a single sentence from a student essay. Rewrite it so it sounds like a real college student wrote it naturally. Rules:
-- Keep the exact same meaning.
-- Change the word order or phrasing.
-- Replace any generic or AI-sounding word with a more natural alternative.
-- NO em dashes (—). Use commas or periods.
-- Do not add new information.
-- Return ONLY the rewritten sentence, nothing else.`;
+const CLAUDE_REWRITE_PROMPT = `You will receive a sentence from a student essay. Your job is to rewrite it to maximize linguistic unpredictability — making it harder for AI detectors to flag. Rules:
+- Change the word order significantly while keeping the meaning.
+- Replace the most predictable word with something more specific or unexpected.
+- If the sentence is long (over 20 words), split it into two.
+- If the sentence is very short (under 6 words), leave it alone.
+- NO em dashes (—).
+- Return ONLY the rewritten sentence.`;
 
-const FINAL_PASS_PROMPT = `You are an editor checking a student essay for AI writing patterns. Make ONLY these fixes:
+const INTERNAL_DETECTOR_PROMPT = `You are an AI detection system. Analyze the following text and score it from 0-100 on how likely it is to be AI-generated, where 0 = definitely human and 100 = definitely AI.
 
-1. Find any two consecutive sentences that start with the same word — fix one.
-2. Find the single most AI-sounding sentence — too smooth or perfectly balanced — and rewrite it naturally.
-3. Remove any em dashes (—) and replace with a comma or period.
-4. Remove these phrases: "it is important to note", "it is worth noting", "in today's world", "in conclusion", "to summarize", "to sum up", "this demonstrates that", "this shows that", "overall,".
-5. If the last sentence sounds like a conclusion or moral — delete it.
-Return ONLY the corrected text.`;
+Look for these AI signals:
+- Uniform sentence lengths (all sentences similar word count)
+- Formal transitional phrases (moreover, furthermore, however, therefore)
+- Perfect parallel structure in lists
+- Overly smooth, balanced phrasing
+- No personal voice or hedging
+- Conclusion/summary sentences
+- Em dashes used frequently
+- Banned AI words: utilize, facilitate, leverage, pivotal, robust, multifaceted, nuanced, delve
+
+Respond with ONLY a JSON object: {"score": <number>, "reasons": ["reason1", "reason2"]}`;
+
+const VARIABILITY_BOOST_PROMPT = `The following text was flagged as AI-generated. Make these specific changes to fix it:
+
+1. Find the 3 longest sentences and break each into two shorter ones.
+2. Find any 3 sentences in a row with similar length — make the middle one dramatically shorter (under 8 words).
+3. Replace 5 generic words with more specific, unexpected alternatives.
+4. Add one personal hedge ("it seems", "one might argue", "this suggests").
+5. If the last sentence sounds like a conclusion — delete it.
+6. Remove ALL em dashes (—) and replace with commas or periods.
+
+Return ONLY the improved text.`;
 
 function buildSystemPrompt(basePrompt: string, writingSample: string | null): string {
   if (!writingSample) return basePrompt;
   return (
-    `IMPORTANT: First analyze this writing sample — note the vocabulary, sentence length, tone, and patterns:\n\n"${writingSample}"\n\nNow rewrite the following text to match that exact style.\n\n` +
+    `CRITICAL: Analyze this writing sample first. Study the vocabulary, sentence length patterns, tone, and quirks:\n\n"${writingSample}"\n\nNow rewrite the following text so it sounds like the SAME person wrote it.\n\n` +
     basePrompt
   );
 }
@@ -75,22 +118,25 @@ function splitIntoSentences(text: string): string[] {
     .filter(s => s.length > 0);
 }
 
-function postProcess(text: string): string {
+// Step 3: Algorithmic post-processing — force burstiness
+function forceburstiness(text: string): string {
   let out = text;
 
+  // Remove em dashes
+  out = out.replace(/ — /g, ", ").replace(/—/g, ",");
+
+  // Hard-replace banned AI words
   const replacements: Array<[RegExp, string]> = [
     [/\butilized?\b/gi, "used"],
     [/\butilization\b/gi, "use"],
     [/\bfacilitates?\b/gi, "helps"],
     [/\bfacilitated\b/gi, "helped"],
     [/\bleveraged?\b/gi, "used"],
-    [/\bleverages\b/gi, "uses"],
     [/\bmoreover\b/gi, "also"],
     [/\bfurthermore\b/gi, "and"],
     [/\bnevertheless\b/gi, "still"],
     [/\bendeavors?\b/gi, "tries"],
     [/\bcommences?\b/gi, "starts"],
-    [/\bcommenced\b/gi, "started"],
     [/\bdelves?\b/gi, "gets into"],
     [/\bunderscores?\b/gi, "shows"],
     [/\bpivotal\b/gi, "key"],
@@ -103,10 +149,7 @@ function postProcess(text: string): string {
     [/\bin conclusion[,.]?\s*/gi, ""],
     [/\bto summarize[,.]?\s*/gi, ""],
     [/\bin summary[,.]?\s*/gi, ""],
-    [/\bto sum up[,.]?\s*/gi, ""],
     [/\boverall,\s*/gi, ""],
-    [/ — /g, ", "],
-    [/—/g, ","],
   ];
 
   for (const [pattern, replacement] of replacements) {
@@ -120,17 +163,63 @@ function postProcess(text: string): string {
     });
   }
 
-  out = out.replace(
-    /[^.!?]*\b(in conclusion|to summarize|in summary|overall,?\s+this|this (essay|paper|text) (has|shows|demonstrates|highlights))\b[^.!?]*[.!?]\s*/gi,
-    ""
-  );
+  // Force burstiness: detect 3 similar-length sentences in a row and fix
+  const sentences = splitIntoSentences(out);
+  const result: string[] = [];
 
+  for (let i = 0; i < sentences.length; i++) {
+    const curr = sentences[i];
+    const prev = sentences[i - 1];
+    const next = sentences[i + 1];
+
+    if (prev && next) {
+      const currLen = curr.split(" ").length;
+      const prevLen = prev.split(" ").length;
+      const nextLen = next.split(" ").length;
+
+      // If three in a row are similar length (within 5 words of each other)
+      if (
+        Math.abs(currLen - prevLen) < 5 &&
+        Math.abs(currLen - nextLen) < 5 &&
+        currLen > 10
+      ) {
+        // Split this sentence at a comma or conjunction
+        const splitMatch = curr.match(/^(.{20,}?),\s(.+)$/);
+        if (splitMatch) {
+          result.push(splitMatch[1] + ".");
+          result.push(splitMatch[2].charAt(0).toUpperCase() + splitMatch[2].slice(1));
+          continue;
+        }
+      }
+    }
+    result.push(curr);
+  }
+
+  out = result.join(" ");
   out = out.replace(/\s{2,}/g, " ").trim();
   return out;
 }
 
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+async function scoreWithInternalDetector(
+  openai: OpenAI,
+  text: string
+): Promise<{ score: number; reasons: string[] }> {
+  try {
+    const res = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: INTERNAL_DETECTOR_PROMPT },
+        { role: "user", content: text },
+      ],
+      temperature: 0.1,
+      max_tokens: 200,
+    });
+    const content = res.choices[0]?.message?.content ?? '{"score": 50, "reasons": []}';
+    const clean = content.replace(/```json|```/g, "").trim();
+    return JSON.parse(clean);
+  } catch {
+    return { score: 50, reasons: [] };
+  }
 }
 
 async function runHumanizePipeline(
@@ -142,7 +231,7 @@ async function runHumanizePipeline(
   temperature: number
 ): Promise<string> {
 
-  // Pass 1: GPT-4o full rewrite
+  // ── Pass 1: GPT-4o full rewrite with high entropy ────────────────
   const pass1 = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
@@ -150,22 +239,21 @@ async function runHumanizePipeline(
       { role: "user", content: text.trim() },
     ],
     temperature,
-    frequency_penalty: 0.5,
-    presence_penalty: 0.3,
+    frequency_penalty: 0.8,
+    presence_penalty: 0.6,
   });
   const pass1Text = pass1.choices[0]?.message?.content ?? text;
 
-  // Pass 2: Claude rewrites each sentence independently
-  // Different model = completely different token distributions = breaks GPT fingerprint
+  // ── Pass 2: Claude rewrites each sentence independently ──────────
   const sentences = splitIntoSentences(pass1Text);
   const rewrittenSentences = await Promise.all(
-    sentences.map(async (sentence, i) => {
+    sentences.map(async (sentence) => {
       if (sentence.split(" ").length < 4) return sentence;
       try {
         const res = await anthropic.messages.create({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 200,
-          system: CLAUDE_SENTENCE_PROMPT,
+          system: CLAUDE_REWRITE_PROMPT,
           messages: [{ role: "user", content: sentence }],
         });
         const content = res.content[0];
@@ -177,18 +265,41 @@ async function runHumanizePipeline(
   );
   const pass2Text = rewrittenSentences.join(" ");
 
-  // Pass 3: GPT-4o final cleanup
-  const pass3 = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: FINAL_PASS_PROMPT },
-      { role: "user", content: pass2Text },
-    ],
-    temperature: 0.4,
-  });
-  const pass3Text = pass3.choices[0]?.message?.content ?? pass2Text;
+  // ── Pass 3: Algorithmic burstiness forcing ───────────────────────
+  let current = forceburstiness(pass2Text);
 
-  return postProcess(pass3Text);
+  // ── Pass 4: Adversarial verification loop ───────────────────────
+  // Keep improving until internal detector scores < 40 or max 3 attempts
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  while (attempts < maxAttempts) {
+    const { score, reasons } = await scoreWithInternalDetector(openai, current);
+
+    if (score < 40) break; // passes internal detector — done
+
+    // Still too AI — boost variability
+    const boostRes = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: VARIABILITY_BOOST_PROMPT + (reasons.length > 0
+            ? `\n\nSpecific issues detected:\n${reasons.map(r => `- ${r}`).join("\n")}`
+            : ""),
+        },
+        { role: "user", content: current },
+      ],
+      temperature: 0.9,
+      frequency_penalty: 0.9,
+      presence_penalty: 0.7,
+    });
+
+    current = forceburstiness(boostRes.choices[0]?.message?.content ?? current);
+    attempts++;
+  }
+
+  return current;
 }
 
 function countWords(text: string): number {
@@ -230,7 +341,7 @@ export async function POST(req: NextRequest) {
   const safeMode =
     typeof mode === "string" && mode in SYSTEM_PROMPTS ? mode : "standard";
   const temperature =
-    safeMode === "aggressive" ? 0.85 : safeMode === "academic" ? 0.6 : 0.75;
+    safeMode === "aggressive" ? 0.95 : safeMode === "academic" ? 0.65 : 0.85;
 
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
