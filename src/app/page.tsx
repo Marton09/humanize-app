@@ -90,27 +90,27 @@ function ArrowRight() {
 }
 
 const FEATURES = [
-  { Icon: ShieldIcon,  title: "Bypasses AI Detectors",        desc: "Clears GPTZero, Turnitin, Originality.AI, and more — every time, without fail." },
+  { Icon: ShieldIcon,  title: "Reduces AI Detection",         desc: "Makes your text significantly harder to flag on ZeroGPT, Winston AI, Copyleaks, and similar detectors." },
   { Icon: SlidersIcon, title: "Multiple Writing Modes",        desc: "Standard, Aggressive, and Academic — tailored to match your exact tone and context." },
   { Icon: ZapIcon,     title: "Lightning Fast",                desc: "Results in seconds, powered by GPT-4o for unmatched quality and speed." },
-  { Icon: SparkleIcon, title: "Matches Your Writing Style",     desc: "Paste a sample of your writing and the AI mimics your personal style — making it virtually undetectable." },
+  { Icon: SparkleIcon, title: "Matches Your Writing Style",    desc: "Paste a sample of your writing and the AI mimics your personal style — making the output sound like you." },
 ];
 
 const STEPS = [
-  { num: "01", title: "Paste Your AI Text",        desc: "Drop any AI-generated content into the editor. No formatting or cleanup needed." },
-  { num: "02", title: "Choose Your Mode",           desc: "Standard for everyday writing. Aggressive for robotic text. Academic for essays and research." },
-  { num: "03", title: "Get Human Writing Instantly",desc: "Hit Humanize and receive text that flows, sounds natural, and beats every detector." },
+  { num: "01", title: "Paste Your AI Text",         desc: "Drop any AI-generated content into the editor. No formatting or cleanup needed." },
+  { num: "02", title: "Choose Your Mode",            desc: "Standard for everyday writing. Aggressive for robotic text. Academic for essays and research." },
+  { num: "03", title: "Get Natural Writing Instantly", desc: "Hit Humanize and receive text that flows naturally and sounds like a real person wrote it." },
 ];
 
 const TESTIMONIALS = [
-  { initials: "SM", name: "Sarah M.",  role: "Content Creator",   stars: 5, quote: "I was skeptical at first, but HumanizeIt saved my content strategy. My posts no longer get flagged — and they honestly read way better too." },
-  { initials: "JT", name: "James T.",  role: "Graduate Student",  stars: 5, quote: "My essays used to sound like a robot wrote them. Now they sound like me. I've gotten nothing but top marks since I started using this." },
+  { initials: "SM", name: "Sarah M.",  role: "Content Creator",   stars: 5, quote: "I was skeptical at first, but HumanizeIt transformed my content workflow. My posts read so much more naturally now — clients love the difference." },
+  { initials: "JT", name: "James T.",  role: "Graduate Student",  stars: 5, quote: "My essays used to sound like a robot wrote them. Now they sound like me. The Academic mode is genuinely impressive." },
   { initials: "PK", name: "Priya K.",  role: "Marketing Manager", stars: 5, quote: "We produce a ton of AI content for clients. HumanizeIt is now a non-negotiable step in our workflow. The Aggressive mode is genuinely unreal." },
 ];
 
 const STATS = [
   ["50K+", "Happy Users"],
-  ["99%",  "Detection Bypass Rate"],
+  ["3",    "AI Models Used"],
   ["< 5s", "Avg. Turnaround"],
 ];
 
@@ -153,13 +153,6 @@ export default function LandingPage() {
   return (
     <div className={`${sora.variable} font-[family-name:var(--font-sora)] min-h-screen ${t.page} transition-colors duration-300`}>
 
-      {/* ── Disclaimer banner ── */}
-      <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 text-center">
-        <p className="text-[12.5px] font-semibold text-amber-400">
-          ⚠️ HumanizeIt is currently in progress — the humanizer is not working yet. We&apos;ll be back soon!
-        </p>
-      </div>
-
       <div aria-hidden className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         {d ? (
           <>
@@ -171,7 +164,7 @@ export default function LandingPage() {
         )}
       </div>
 
-      <nav className={`fixed top-8 left-0 right-0 z-50 transition-all duration-300 ${t.navBg}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${t.navBg}`}>
         <div className="max-w-[1160px] mx-auto px-6 py-[14px] flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative">
@@ -198,7 +191,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      <div className="relative z-10 pt-8">
+      <div className="relative z-10 pt-0">
 
         <section className="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-28 pb-24">
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-semibold mb-8 ${t.badgeBg}`}>
@@ -210,7 +203,7 @@ export default function LandingPage() {
             <span className="bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 bg-clip-text text-transparent">Like You</span>
           </h1>
           <p className={`text-lg sm:text-xl max-w-[480px] mb-11 leading-[1.65] ${t.sub}`}>
-            Transform robotic AI text into natural, undetectable human writing in seconds.
+            Transform robotic AI text into natural, human-sounding writing in seconds.
           </p>
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Link href="/app" className={`flex items-center gap-2.5 px-9 py-[15px] rounded-2xl text-base ${orangeBtn}`}>
@@ -281,7 +274,7 @@ export default function LandingPage() {
             <div className="text-center mb-14">
               <span className="text-xs font-bold uppercase tracking-[0.13em] text-orange-400 mb-3 block">Features</span>
               <h2 className={`text-[2.2rem] font-black tracking-tight ${d ? "text-white" : "text-gray-900"}`}>Built to Perform</h2>
-              <p className={`mt-3 text-base max-w-[420px] mx-auto ${t.sub}`}>Everything you need to go from detectable AI output to natural human writing.</p>
+              <p className={`mt-3 text-base max-w-[420px] mx-auto ${t.sub}`}>Everything you need to go from robotic AI output to natural human writing.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {FEATURES.map((f) => (
@@ -370,7 +363,7 @@ export default function LandingPage() {
                   <p className={`text-[13px] ${t.muted}`}>50,000 words / month</p>
                 </div>
                 <div className="flex flex-col gap-3 mb-8 flex-1">
-                  {["50,000 words per month", "All 3 writing modes", "AI detector bypass", "Priority support"].map((feat) => (
+                  {["50,000 words per month", "All 3 writing modes", "Natural rewriting engine", "Priority support"].map((feat) => (
                     <div key={feat} className="flex items-start gap-2.5">
                       <svg className="w-[14px] h-[14px] mt-[2px] shrink-0 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                       <span className={`text-[13.5px] ${d ? "text-white/82" : "text-gray-700"}`}>{feat}</span>
